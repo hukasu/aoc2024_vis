@@ -1,0 +1,8 @@
+# VSCode
+.vscode/
+
+# Rust
+/target
+
+# AoC
+assets/inputs/

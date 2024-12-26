@@ -1,0 +1,10 @@
+[package]
+name = "aoc2024_vis"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+with_inspector = ["bevy/bevy_remote"]
+
+[dependencies]
+bevy = { version = "0.15", features = ["wayland"] }
