@@ -1,5 +1,6 @@
 mod components;
 mod day24;
+mod days;
 mod main_menu;
 mod states;
 
@@ -18,6 +19,7 @@ use components::{PartChange, StateChange};
 
 static FONT_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
 static FONT_SYMBOLS_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
+static FONT_SYMBOLS_2_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
 
 const BUTTON_BACKGROUND_COLOR: Color = Color::srgb(0.7, 0.7, 0.7);
 const BUTTON_HOVERED_BACKGROUND_COLOR: Color = Color::srgb(0.8, 0.8, 0.9);
@@ -49,6 +51,12 @@ fn load_font(asset_server: Res<AssetServer>) {
         bevy::log::error!("Failed to load font.");
     };
     if FONT_SYMBOLS_HANDLE
+        .set(asset_server.load("NotoSansSymbols-VariableFont_wght.ttf"))
+        .is_err()
+    {
+        bevy::log::error!("Failed to load symbols font.");
+    };
+    if FONT_SYMBOLS_2_HANDLE
         .set(asset_server.load("NotoSansSymbols2-Regular.ttf"))
         .is_err()
     {
