@@ -128,106 +128,18 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                     },
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        Name::new("main_menu_day_1"),
-                        Text::new("Day 1"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_2"),
-                        Text::new("Day 2"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_3"),
-                        Text::new("Day 3"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_4"),
-                        Text::new("Day 4"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_5"),
-                        Text::new("Day 5"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_6"),
-                        Text::new("Day 6"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_7"),
-                        Text::new("Day 7"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_8"),
-                        Text::new("Day 8"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_9"),
-                        Text::new("Day 9"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_10"),
-                        Text::new("Day 10"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
+                    for i in 1..=10 {
+                        parent.spawn((
+                            Name::new(format!("main_menu_day_{i}")),
+                            Text::new(format!("Day {i}")),
+                            Node {
+                                padding: UiRect::all(Val::Px(3.)),
+                                ..Default::default()
+                            },
+                            Button,
+                            Disabled,
+                        ));
+                    }
                 });
             parent
                 .spawn((
@@ -240,106 +152,18 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                     },
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        Name::new("main_menu_day_11"),
-                        Text::new("Day 11"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_12"),
-                        Text::new("Day 12"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_13"),
-                        Text::new("Day 13"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_14"),
-                        Text::new("Day 14"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_15"),
-                        Text::new("Day 15"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_16"),
-                        Text::new("Day 16"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_17"),
-                        Text::new("Day 17"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_18"),
-                        Text::new("Day 18"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_19"),
-                        Text::new("Day 19"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_20"),
-                        Text::new("Day 20"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
+                    for i in 11..=20 {
+                        parent.spawn((
+                            Name::new(format!("main_menu_day_{i}")),
+                            Text::new(format!("Day {i}")),
+                            Node {
+                                padding: UiRect::all(Val::Px(3.)),
+                                ..Default::default()
+                            },
+                            Button,
+                            Disabled,
+                        ));
+                    }
                 });
             parent
                 .spawn((
@@ -352,56 +176,30 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                     },
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        Name::new("main_menu_day_21"),
-                        Text::new("Day 21"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_22"),
-                        Text::new("Day 22"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_23"),
-                        Text::new("Day 23"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_24"),
-                        Text::new("Day 24"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        StateChange(ScenesStates::Day(24)),
-                    ));
-                    parent.spawn((
-                        Name::new("main_menu_day_25"),
-                        Text::new("Day 25"),
-                        Node {
-                            padding: UiRect::all(Val::Px(3.)),
-                            ..Default::default()
-                        },
-                        Button,
-                        Disabled,
-                    ));
+                    for i in 21..24 {
+                        parent.spawn((
+                            Name::new(format!("main_menu_day_{i}")),
+                            Text::new(format!("Day {i}")),
+                            Node {
+                                padding: UiRect::all(Val::Px(3.)),
+                                ..Default::default()
+                            },
+                            Button,
+                            Disabled,
+                        ));
+                    }
+                    for i in 24..=25 {
+                        parent.spawn((
+                            Name::new(format!("main_menu_day_{i}")),
+                            Text::new(format!("Day {i}")),
+                            Node {
+                                padding: UiRect::all(Val::Px(3.)),
+                                ..Default::default()
+                            },
+                            Button,
+                            StateChange(ScenesStates::Day(i)),
+                        ));
+                    }
                 });
         });
 }

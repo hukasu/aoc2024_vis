@@ -1,5 +1,6 @@
 mod components;
 mod day24;
+mod day25;
 mod days;
 mod main_menu;
 mod states;
@@ -35,7 +36,7 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins((main_menu::Plugin, day24::Plugin));
+        app.add_plugins((main_menu::Plugin, day24::Plugin, day25::Plugin));
 
         app.init_state::<states::States>();
 
