@@ -157,7 +157,7 @@ fn build_ui(
 ) {
     bevy::log::trace!("Day 24 Part 2");
 
-    let header = build_header(&mut commands, "day24");
+    let header = build_header(&mut commands, "day24", true);
     let content = build_content(&mut commands, "day24");
     let footer = build_footer(&mut commands, "day24");
 

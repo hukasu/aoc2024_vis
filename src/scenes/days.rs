@@ -13,7 +13,7 @@ use super::{
     BUTTON_BACKGROUND_COLOR, FONT_HANDLE,
 };
 
-pub fn build_header(commands: &mut Commands, day: &str) -> Entity {
+pub fn build_header(commands: &mut Commands, day: &str, part_change: bool) -> Entity {
     let mut header = commands.spawn((
         Name::new(format!("{day}_header")),
         Node {
@@ -32,7 +32,7 @@ pub fn build_header(commands: &mut Commands, day: &str) -> Entity {
             ..Default::default()
         },
     ));
-    header.with_children(build_state_buttons);
+    header.with_children(|parent| build_state_buttons(parent, part_change));
     header.id()
 }
 
@@ -77,7 +77,7 @@ pub fn build_footer(commands: &mut Commands, day: &str) -> Entity {
         .id()
 }
 
-fn build_state_buttons(parent: &mut ChildBuilder) {
+fn build_state_buttons(parent: &mut ChildBuilder, part_change: bool) {
     let font = FONT_HANDLE.get().expect("Font should be initialized.");
 
     parent
@@ -95,34 +95,36 @@ fn build_state_buttons(parent: &mut ChildBuilder) {
             },
             TextColor(Color::BLACK),
         ));
-    parent
-        .spawn((
-            button_node(),
-            BackgroundColor(BUTTON_BACKGROUND_COLOR),
-            PartChange::Part1,
-        ))
-        .with_child((
-            Text::new("Part 1"),
-            TextFont {
-                font: font.clone(),
-                ..Default::default()
-            },
-            TextColor(Color::BLACK),
-        ));
-    parent
-        .spawn((
-            button_node(),
-            BackgroundColor(BUTTON_BACKGROUND_COLOR),
-            PartChange::Part2,
-        ))
-        .with_child((
-            Text::new("Part 2"),
-            TextFont {
-                font: font.clone(),
-                ..Default::default()
-            },
-            TextColor(Color::BLACK),
-        ));
+    if part_change {
+        parent
+            .spawn((
+                button_node(),
+                BackgroundColor(BUTTON_BACKGROUND_COLOR),
+                PartChange::Part1,
+            ))
+            .with_child((
+                Text::new("Part 1"),
+                TextFont {
+                    font: font.clone(),
+                    ..Default::default()
+                },
+                TextColor(Color::BLACK),
+            ));
+        parent
+            .spawn((
+                button_node(),
+                BackgroundColor(BUTTON_BACKGROUND_COLOR),
+                PartChange::Part2,
+            ))
+            .with_child((
+                Text::new("Part 2"),
+                TextFont {
+                    font: font.clone(),
+                    ..Default::default()
+                },
+                TextColor(Color::BLACK),
+            ));
+    }
 }
 
 pub fn button_node() -> Node {

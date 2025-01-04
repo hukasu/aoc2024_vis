@@ -115,7 +115,7 @@ fn build_part1_ui(
     input: &Input,
     execution_result: Option<ExecutionResult>,
 ) {
-    let header = build_header(commands, "day24");
+    let header = build_header(commands, "day24", true);
     let content = build_content(commands, "day24");
     let footer = build_footer(commands, "day24");
 
