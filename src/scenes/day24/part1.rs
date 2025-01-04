@@ -49,7 +49,12 @@ impl bevy::app::Plugin for Plugin {
                 .run_if(in_state(States::Part1))
                 .run_if(not(resource_exists::<Input>)),
         )
-        .add_systems(Update, controls_interaction.run_if(in_state(States::Part1)));
+        .add_systems(
+            Update,
+            controls_interaction
+                .run_if(in_state(States::Part1))
+                .run_if(resource_exists::<Input>),
+        );
     }
 }
 
