@@ -83,30 +83,117 @@ impl Input {
         let mut operations = std::mem::take(&mut input.operations);
 
         let mut set = BTreeSet::new();
-        set.insert([b'x', b'0', b'0']);
-        set.insert([b'y', b'0', b'0']);
 
-        let mut index = 0;
-        let mut count = 3;
+        let mut carry = [0; 3];
 
-        while !operations.is_empty() {
-            let op = operations.remove(0);
+        for index in 0u8..45 {
+            let inputs = [
+                [b'x', (index / 10) + b'0', (index % 10) + b'0'],
+                [b'y', (index / 10) + b'0', (index % 10) + b'0'],
+            ];
+            set.extend(inputs);
 
-            if set.contains(&op.l) && set.contains(&op.r) {
-                set.insert(op.out);
-                input.operations.push(op);
-                count += 1;
-                if count >= 5 {
-                    count = 0;
-                    index += 1;
+            let xor = {
+                let xor_pos = operations
+                    .iter()
+                    .position(|op| {
+                        inputs.contains(&op.l)
+                            && inputs.contains(&op.r)
+                            && matches!(op.operator, Operator::Xor)
+                    })
+                    .unwrap();
+                operations.remove(xor_pos)
+            };
+            let and = {
+                let and_pos = operations
+                    .iter()
+                    .position(|op| {
+                        inputs.contains(&op.l)
+                            && inputs.contains(&op.r)
+                            && matches!(op.operator, Operator::And)
+                    })
+                    .unwrap();
+                operations.remove(and_pos)
+            };
 
-                    set.insert([b'x', (index / 10) + b'0', (index % 10) + b'0']);
-                    set.insert([b'y', (index / 10) + b'0', (index % 10) + b'0']);
-                }
-            } else {
-                operations.push(op);
+            input.operations.push(xor.clone());
+            input.operations.push(and.clone());
+            set.insert(xor.out);
+            set.insert(and.out);
+
+            if index != 0 {
+                let inputs = [xor.out, carry];
+
+                let xor_b = {
+                    let xor_pos = operations
+                        .iter()
+                        .position(|op| {
+                            inputs.contains(&op.l)
+                                && inputs.contains(&op.r)
+                                && matches!(op.operator, Operator::Xor)
+                        })
+                        .or_else(|| {
+                            operations.iter().position(|op| {
+                                set.contains(&op.l)
+                                    && set.contains(&op.r)
+                                    && matches!(op.operator, Operator::Xor)
+                            })
+                        })
+                        .unwrap();
+                    operations.remove(xor_pos)
+                };
+                let and_b = {
+                    let and_pos = operations
+                        .iter()
+                        .position(|op| {
+                            inputs.contains(&op.l)
+                                && inputs.contains(&op.r)
+                                && matches!(op.operator, Operator::And)
+                        })
+                        .or_else(|| {
+                            operations.iter().position(|op| {
+                                set.contains(&op.l)
+                                    && set.contains(&op.r)
+                                    && matches!(op.operator, Operator::And)
+                            })
+                        })
+                        .unwrap();
+                    operations.remove(and_pos)
+                };
+
+                input.operations.push(xor_b.clone());
+                input.operations.push(and_b.clone());
+                set.insert(xor_b.out);
+                set.insert(and_b.out);
+
+                let inputs = [and.out, and_b.out];
+                let or = {
+                    let or_pos = operations
+                        .iter()
+                        .position(|op| {
+                            inputs.contains(&op.l)
+                                && inputs.contains(&op.r)
+                                && matches!(op.operator, Operator::Or)
+                        })
+                        .or_else(|| {
+                            operations.iter().position(|op| {
+                                set.contains(&op.l)
+                                    && set.contains(&op.r)
+                                    && matches!(op.operator, Operator::Or)
+                            })
+                        })
+                        .unwrap();
+                    operations.remove(or_pos)
+                };
+
+                input.operations.push(or.clone());
+                set.insert(or.out);
+
+                carry = or.out;
             }
         }
+
+        assert!(operations.is_empty());
 
         input
     }

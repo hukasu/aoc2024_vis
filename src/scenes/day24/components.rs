@@ -10,3 +10,16 @@ pub enum Controls {
 
 #[derive(Debug, Clone, Copy, Component, Deref)]
 pub struct Wire(pub [u8; 3]);
+
+#[derive(Debug, Component)]
+pub struct Adder;
+
+#[derive(Debug, Component)]
+pub struct Gate {
+    pub left: [u8; 3],
+    pub right: [u8; 3],
+    pub out: [u8; 3],
+}
+
+#[derive(Debug, Component)]
+pub struct GizmosCamera;

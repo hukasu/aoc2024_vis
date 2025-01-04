@@ -14,7 +14,7 @@ use bevy::{
         in_state, AppExtStates, Camera2d, ClearColor, Commands, DespawnRecursiveExt,
         IntoSystemConfigs, OnEnter, OnExit, Res,
     },
-    ui::{FlexDirection, Node, Val},
+    ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
 use crate::{loader::Input as InputAsset, scenes::states::States as SceneStates};
@@ -41,9 +41,10 @@ impl bevy::app::Plugin for Plugin {
 }
 
 fn build_day_24(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let camera = commands.spawn((Name::new("day24_camera"), Camera2d)).id();
     let day24_resource = resources::Day24 {
         input: asset_server.load("inputs/day24.txt"),
-        camera: commands.spawn((Name::new("day24_camera"), Camera2d)).id(),
+        camera,
         ui: commands
             .spawn((
                 Name::new("day24_ui"),
@@ -53,6 +54,7 @@ fn build_day_24(mut commands: Commands, asset_server: Res<AssetServer>) {
                     flex_direction: FlexDirection::Column,
                     ..Default::default()
                 },
+                TargetCamera(camera),
             ))
             .id(),
     };
