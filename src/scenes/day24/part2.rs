@@ -8,33 +8,36 @@ use bevy::{
     image::Image,
     math::{UVec2, Vec2, Vec3},
     prelude::{
-        in_state, not, resource_added, resource_exists, BuildChildren, Button, Camera, Camera2d,
+        in_state, not, resource_added, resource_exists, BuildChildren, Camera, Camera2d,
         ChildBuild, ChildBuilder, Commands, DespawnRecursiveExt, Entity, Gizmos, GlobalTransform,
         ImageNode, IntoSystemConfigs, OnEnter, OnExit, Query, Res, Single, Text, With, Without,
     },
     render::view::RenderLayers,
     sprite::{TextureAtlas, TextureAtlasLayout},
     text::{TextColor, TextFont},
-    time::Time,
     ui::{
-        AlignContent, BackgroundColor, Interaction, JustifyContent, Node, Overflow, PositionType,
-        ScrollPosition, Val,
+        AlignContent, BackgroundColor, FlexDirection, JustifyContent, Node, Overflow, PositionType,
+        Val,
     },
     window::{PrimaryWindow, Window},
 };
 
-use crate::scenes::{
-    day24::{components::Gate, operation::Operator},
-    days::{build_content, build_footer, build_header, button_node},
-    BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, FONT_SYMBOLS_2_HANDLE,
+use crate::{
+    scenes::{
+        day24::{components::Gate, operation::Operator},
+        days::{build_content, build_header, button_node},
+        BUTTON_BACKGROUND_COLOR, FONT_SYMBOLS_2_HANDLE,
+    },
+    scroll_controls::{ScrollControl, ScrollWindow},
 };
 
 use super::{
-    components::{Adder, Controls, GizmosCamera},
+    components::{Adder, GizmosCamera},
     resources::{Day24, Input},
     states::States,
 };
 
+const SCROLL_SPEED: f32 = 512.;
 const IMAGE_SIZE: f32 = 32.;
 const PADDING_BETWEEN_GATES: f32 = 16.;
 const ADDER_PADDING: f32 = 20.;
@@ -58,52 +61,13 @@ impl bevy::app::Plugin for Plugin {
         )
         .add_systems(
             Update,
-            (controls_interaction, draw_connections)
+            draw_connections
                 .run_if(in_state(States::Part2))
                 .run_if(resource_exists::<Input>)
                 .chain(),
         )
         .add_systems(OnEnter(States::Part2), spawn_gizmos_camera)
         .add_systems(OnExit(States::Part2), despawn_gizmos_camera);
-    }
-}
-
-type ControlWithChangedInteractionQuery<'a, 'b> = Query<
-    'a,
-    'b,
-    (
-        &'static mut BackgroundColor,
-        &'static Interaction,
-        &'static Controls,
-    ),
-    With<Button>,
->;
-
-fn controls_interaction(
-    mut controls: ControlWithChangedInteractionQuery,
-    mut nodes: Single<&mut ScrollPosition, With<Adder>>,
-    time: Res<Time>,
-) {
-    const SCROLL_SPEED: f32 = 512.;
-
-    for (mut background_color, interaction, control) in controls.iter_mut() {
-        match interaction {
-            Interaction::None => background_color.0 = BUTTON_BACKGROUND_COLOR,
-            Interaction::Hovered | Interaction::Pressed => {
-                match control {
-                    Controls::Reset => {
-                        nodes.offset_x -= SCROLL_SPEED * time.delta_secs();
-                    }
-                    Controls::Step => {
-                        unreachable!("Not present on part 2");
-                    }
-                    Controls::FastForward => {
-                        nodes.offset_x += SCROLL_SPEED * time.delta_secs();
-                    }
-                };
-                background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR;
-            }
-        }
     }
 }
 
@@ -159,7 +123,6 @@ fn build_ui(
 
     let header = build_header(&mut commands, "day24", true);
     let content = build_content(&mut commands, "day24");
-    let footer = build_footer(&mut commands, "day24");
 
     let gates = asset_server.load("gates.png");
     let gates_atlas_layout = asset_server.add(TextureAtlasLayout::from_grid(
@@ -170,14 +133,13 @@ fn build_ui(
         None,
     ));
 
-    let content_data = build_visualization(&mut commands, &input, gates, gates_atlas_layout);
-
-    commands.entity(content).add_child(content_data);
-    commands.entity(footer).with_children(build_control_buttons);
+    commands
+        .entity(content)
+        .with_children(|parent| build_visualization(parent, &input, gates, gates_atlas_layout));
 
     commands
         .entity(day24_resource.ui)
-        .add_children(&[header, content, footer]);
+        .add_children(&[header, content]);
 }
 
 fn destroy_ui(mut commands: Commands, day24_resource: Res<Day24>) {
@@ -205,11 +167,11 @@ fn despawn_gizmos_camera(mut commands: Commands, cameras: Query<Entity, With<Giz
 }
 
 fn build_visualization(
-    parent: &mut Commands,
+    parent: &mut ChildBuilder,
     input: &Input,
     gates: Handle<Image>,
     gates_atlas_layout: Handle<TextureAtlasLayout>,
-) -> Entity {
+) {
     parent
         .spawn((
             Name::new("day24_part2_visualization"),
@@ -217,520 +179,570 @@ fn build_visualization(
             Node {
                 top: Val::Px(50.),
                 width: Val::Vw(100.),
-                flex_direction: bevy::ui::FlexDirection::Row,
-                column_gap: Val::Px(20.),
-                overflow: Overflow::scroll_x(),
+                position_type: PositionType::Absolute,
+                flex_direction: FlexDirection::Column,
                 ..Default::default()
             },
         ))
         .with_children(|parent| {
-            let mut reverse_operations = input.operations.clone();
-            reverse_operations.reverse();
-            for (i, chunk) in reverse_operations.chunks(5).enumerate() {
-                let index = u8::try_from(44 - i).unwrap();
-                let xkey = [b'x', (index / 10) + b'0', (index % 10) + b'0'];
-                let ykey = [b'y', (index / 10) + b'0', (index % 10) + b'0'];
-                let zkey = [b'z', (index / 10) + b'0', (index % 10) + b'0'];
+            let window = parent
+                .spawn((
+                    Name::new("day24_part2_ripple_adder"),
+                    ScrollWindow,
+                    Node {
+                        flex_direction: FlexDirection::Row,
+                        column_gap: Val::Px(20.),
+                        overflow: Overflow::scroll_x(),
+                        ..Default::default()
+                    },
+                ))
+                .with_children(|parent| {
+                    let mut reverse_operations = input.operations.clone();
+                    reverse_operations.reverse();
+                    for (i, chunk) in reverse_operations.chunks(5).enumerate() {
+                        let index = u8::try_from(44 - i).unwrap();
+                        let xkey = [b'x', (index / 10) + b'0', (index % 10) + b'0'];
+                        let ykey = [b'y', (index / 10) + b'0', (index % 10) + b'0'];
+                        let zkey = [b'z', (index / 10) + b'0', (index % 10) + b'0'];
 
-                match chunk {
-                    [or, and_b, xor_b, and, xor] => {
-                        assert_eq!(or.operator, Operator::Or);
-                        assert_eq!(and_b.operator, Operator::And);
-                        assert_eq!(xor_b.operator, Operator::Xor);
-                        assert_eq!(and.operator, Operator::And);
-                        assert_eq!(xor.operator, Operator::Xor);
+                        match chunk {
+                            [or, and_b, xor_b, and, xor] => {
+                                assert_eq!(or.operator, Operator::Or);
+                                assert_eq!(and_b.operator, Operator::And);
+                                assert_eq!(xor_b.operator, Operator::Xor);
+                                assert_eq!(and.operator, Operator::And);
+                                assert_eq!(xor.operator, Operator::Xor);
 
-                        parent
-                            .spawn((
-                                Node {
-                                    min_width: Val::Px(
-                                        ADDER_PADDING * 2.
-                                            + IMAGE_SIZE * 3.
-                                            + PADDING_BETWEEN_GATES * 6.,
-                                    ),
-                                    max_height: Val::Px(
-                                        ADDER_PADDING * 5.
-                                            + IMAGE_SIZE * 4.
-                                            + PADDING_BETWEEN_GATES * 8.,
-                                    ),
-                                    ..Default::default()
-                                },
-                                BackgroundColor(palettes::tailwind::BLUE_100.into()),
-                            ))
-                            .with_children(|parent| {
                                 parent
                                     .spawn((
                                         Node {
-                                            top: Val::Px(ADDER_PADDING),
-                                            left: Val::Px(ADDER_PADDING + PADDING_BETWEEN_GATES),
-                                            min_width: Val::Px(IMAGE_SIZE),
-                                            min_height: Val::Px(IMAGE_SIZE),
-                                            position_type: PositionType::Absolute,
-                                            justify_content: JustifyContent::Center,
-                                            align_content: AlignContent::Center,
-                                            ..Default::default()
-                                        },
-                                        Gate {
-                                            left: [0; 3],
-                                            right: [0; 3],
-                                            out: xkey,
-                                        },
-                                    ))
-                                    .with_child((
-                                        Text::new(String::from_utf8_lossy(&xkey)),
-                                        TextColor(Color::BLACK),
-                                    ));
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(ADDER_PADDING),
-                                            left: Val::Px(
-                                                ADDER_PADDING
-                                                    + IMAGE_SIZE
-                                                    + PADDING_BETWEEN_GATES * 3.,
-                                            ),
-                                            min_width: Val::Px(IMAGE_SIZE),
-                                            min_height: Val::Px(IMAGE_SIZE),
-                                            position_type: PositionType::Absolute,
-                                            justify_content: JustifyContent::Center,
-                                            align_content: AlignContent::Center,
-                                            ..Default::default()
-                                        },
-                                        Gate {
-                                            left: [0; 3],
-                                            right: [0; 3],
-                                            out: ykey,
-                                        },
-                                    ))
-                                    .with_child((
-                                        Text::new(String::from_utf8_lossy(&ykey)),
-                                        TextColor(Color::BLACK),
-                                    ));
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(
+                                            min_width: Val::Px(
                                                 ADDER_PADDING * 2.
-                                                    + IMAGE_SIZE
-                                                    + PADDING_BETWEEN_GATES * 2.,
-                                            ),
-                                            left: Val::Px(ADDER_PADDING),
-                                            min_width: Val::Px(
-                                                IMAGE_SIZE * 2. + PADDING_BETWEEN_GATES * 4.,
+                                                    + IMAGE_SIZE * 3.
+                                                    + PADDING_BETWEEN_GATES * 6.,
                                             ),
                                             min_height: Val::Px(
-                                                IMAGE_SIZE + PADDING_BETWEEN_GATES * 2.,
+                                                ADDER_PADDING * 5.
+                                                    + IMAGE_SIZE * 4.
+                                                    + PADDING_BETWEEN_GATES * 8.,
                                             ),
-                                            position_type: PositionType::Absolute,
                                             ..Default::default()
                                         },
-                                        BackgroundColor(palettes::tailwind::BLUE_300.into()),
+                                        BackgroundColor(palettes::tailwind::BLUE_100.into()),
                                     ))
                                     .with_children(|parent| {
-                                        parent.spawn((
-                                            Node {
-                                                top: Val::Px(PADDING_BETWEEN_GATES),
-                                                left: Val::Px(PADDING_BETWEEN_GATES),
-                                                position_type: PositionType::Absolute,
-                                                ..Default::default()
-                                            },
-                                            ImageNode {
-                                                image: gates.clone(),
-                                                texture_atlas: Some(TextureAtlas {
-                                                    layout: gates_atlas_layout.clone(),
-                                                    index: 0,
-                                                }),
-                                                ..Default::default()
-                                            },
-                                            Gate {
-                                                left: and.l,
-                                                right: and.r,
-                                                out: and.out,
-                                            },
-                                        ));
-                                        parent.spawn((
-                                            Node {
-                                                top: Val::Px(PADDING_BETWEEN_GATES),
-                                                left: Val::Px(
-                                                    IMAGE_SIZE + PADDING_BETWEEN_GATES * 3.,
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(ADDER_PADDING),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING + PADDING_BETWEEN_GATES,
+                                                    ),
+                                                    min_width: Val::Px(IMAGE_SIZE),
+                                                    min_height: Val::Px(IMAGE_SIZE),
+                                                    position_type: PositionType::Absolute,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_content: AlignContent::Center,
+                                                    ..Default::default()
+                                                },
+                                                Gate {
+                                                    left: [0; 3],
+                                                    right: [0; 3],
+                                                    out: xkey,
+                                                },
+                                            ))
+                                            .with_child((
+                                                Text::new(String::from_utf8_lossy(&xkey)),
+                                                TextColor(Color::BLACK),
+                                            ));
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(ADDER_PADDING),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING
+                                                            + IMAGE_SIZE
+                                                            + PADDING_BETWEEN_GATES * 3.,
+                                                    ),
+                                                    min_width: Val::Px(IMAGE_SIZE),
+                                                    min_height: Val::Px(IMAGE_SIZE),
+                                                    position_type: PositionType::Absolute,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_content: AlignContent::Center,
+                                                    ..Default::default()
+                                                },
+                                                Gate {
+                                                    left: [0; 3],
+                                                    right: [0; 3],
+                                                    out: ykey,
+                                                },
+                                            ))
+                                            .with_child((
+                                                Text::new(String::from_utf8_lossy(&ykey)),
+                                                TextColor(Color::BLACK),
+                                            ));
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(
+                                                        ADDER_PADDING * 2.
+                                                            + IMAGE_SIZE
+                                                            + PADDING_BETWEEN_GATES * 2.,
+                                                    ),
+                                                    left: Val::Px(ADDER_PADDING),
+                                                    min_width: Val::Px(
+                                                        IMAGE_SIZE * 2.
+                                                            + PADDING_BETWEEN_GATES * 4.,
+                                                    ),
+                                                    min_height: Val::Px(
+                                                        IMAGE_SIZE + PADDING_BETWEEN_GATES * 2.,
+                                                    ),
+                                                    position_type: PositionType::Absolute,
+                                                    ..Default::default()
+                                                },
+                                                BackgroundColor(
+                                                    palettes::tailwind::BLUE_300.into(),
                                                 ),
-                                                position_type: PositionType::Absolute,
-                                                ..Default::default()
-                                            },
-                                            ImageNode {
-                                                image: gates.clone(),
-                                                texture_atlas: Some(TextureAtlas {
-                                                    layout: gates_atlas_layout.clone(),
-                                                    index: 3,
-                                                }),
-                                                ..Default::default()
-                                            },
-                                            Gate {
-                                                left: xor.l,
-                                                right: xor.r,
-                                                out: xor.out,
-                                            },
-                                        ));
-                                    });
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(
-                                                ADDER_PADDING * 3.
-                                                    + IMAGE_SIZE * 2.
-                                                    + PADDING_BETWEEN_GATES * 4.,
-                                            ),
-                                            left: Val::Px(
-                                                ADDER_PADDING
-                                                    + IMAGE_SIZE
-                                                    + PADDING_BETWEEN_GATES * 2.,
-                                            ),
-                                            min_width: Val::Px(
-                                                IMAGE_SIZE * 2. + PADDING_BETWEEN_GATES * 4.,
-                                            ),
-                                            min_height: Val::Px(
-                                                IMAGE_SIZE + PADDING_BETWEEN_GATES * 2.,
-                                            ),
-                                            position_type: PositionType::Absolute,
-                                            ..Default::default()
-                                        },
-                                        BackgroundColor(palettes::tailwind::BLUE_300.into()),
-                                    ))
-                                    .with_children(|parent| {
-                                        parent.spawn((
-                                            Node {
-                                                top: Val::Px(PADDING_BETWEEN_GATES),
-                                                left: Val::Px(PADDING_BETWEEN_GATES),
-                                                position_type: PositionType::Absolute,
-                                                ..Default::default()
-                                            },
-                                            ImageNode {
-                                                image: gates.clone(),
-                                                texture_atlas: Some(TextureAtlas {
-                                                    layout: gates_atlas_layout.clone(),
-                                                    index: 0,
-                                                }),
-                                                ..Default::default()
-                                            },
-                                            Gate {
-                                                left: and_b.l,
-                                                right: and_b.r,
-                                                out: and_b.out,
-                                            },
-                                        ));
-                                        parent.spawn((
-                                            Node {
-                                                top: Val::Px(PADDING_BETWEEN_GATES),
-                                                left: Val::Px(
-                                                    IMAGE_SIZE + PADDING_BETWEEN_GATES * 3.,
+                                            ))
+                                            .with_children(|parent| {
+                                                parent.spawn((
+                                                    Node {
+                                                        top: Val::Px(PADDING_BETWEEN_GATES),
+                                                        left: Val::Px(PADDING_BETWEEN_GATES),
+                                                        position_type: PositionType::Absolute,
+                                                        ..Default::default()
+                                                    },
+                                                    ImageNode {
+                                                        image: gates.clone(),
+                                                        texture_atlas: Some(TextureAtlas {
+                                                            layout: gates_atlas_layout.clone(),
+                                                            index: 0,
+                                                        }),
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: and.l,
+                                                        right: and.r,
+                                                        out: and.out,
+                                                    },
+                                                ));
+                                                parent.spawn((
+                                                    Node {
+                                                        top: Val::Px(PADDING_BETWEEN_GATES),
+                                                        left: Val::Px(
+                                                            IMAGE_SIZE + PADDING_BETWEEN_GATES * 3.,
+                                                        ),
+                                                        position_type: PositionType::Absolute,
+                                                        ..Default::default()
+                                                    },
+                                                    ImageNode {
+                                                        image: gates.clone(),
+                                                        texture_atlas: Some(TextureAtlas {
+                                                            layout: gates_atlas_layout.clone(),
+                                                            index: 3,
+                                                        }),
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: xor.l,
+                                                        right: xor.r,
+                                                        out: xor.out,
+                                                    },
+                                                ));
+                                            });
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(
+                                                        ADDER_PADDING * 3.
+                                                            + IMAGE_SIZE * 2.
+                                                            + PADDING_BETWEEN_GATES * 4.,
+                                                    ),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING
+                                                            + IMAGE_SIZE
+                                                            + PADDING_BETWEEN_GATES * 2.,
+                                                    ),
+                                                    min_width: Val::Px(
+                                                        IMAGE_SIZE * 2.
+                                                            + PADDING_BETWEEN_GATES * 4.,
+                                                    ),
+                                                    min_height: Val::Px(
+                                                        IMAGE_SIZE + PADDING_BETWEEN_GATES * 2.,
+                                                    ),
+                                                    position_type: PositionType::Absolute,
+                                                    ..Default::default()
+                                                },
+                                                BackgroundColor(
+                                                    palettes::tailwind::BLUE_300.into(),
                                                 ),
-                                                position_type: PositionType::Absolute,
-                                                ..Default::default()
-                                            },
-                                            ImageNode {
-                                                image: gates.clone(),
-                                                texture_atlas: Some(TextureAtlas {
-                                                    layout: gates_atlas_layout.clone(),
-                                                    index: 3,
-                                                }),
-                                                ..Default::default()
-                                            },
-                                            Gate {
-                                                left: xor_b.l,
-                                                right: xor_b.r,
-                                                out: xor_b.out,
-                                            },
-                                        ));
-                                    });
-                                parent.spawn((
-                                    Node {
-                                        top: Val::Px(
-                                            ADDER_PADDING * 3.
-                                                + IMAGE_SIZE * 2.
-                                                + PADDING_BETWEEN_GATES * 5.,
-                                        ),
-                                        left: Val::Px(ADDER_PADDING + PADDING_BETWEEN_GATES),
-                                        position_type: PositionType::Absolute,
-                                        ..Default::default()
-                                    },
-                                    ImageNode {
-                                        image: gates.clone(),
-                                        texture_atlas: Some(TextureAtlas {
-                                            layout: gates_atlas_layout.clone(),
-                                            index: 2,
-                                        }),
-                                        ..Default::default()
-                                    },
-                                    Gate {
-                                        left: or.l,
-                                        right: or.r,
-                                        out: or.out,
-                                    },
-                                ));
-                                if index == 44 {
-                                    parent
-                                        .spawn((
+                                            ))
+                                            .with_children(|parent| {
+                                                parent.spawn((
+                                                    Node {
+                                                        top: Val::Px(PADDING_BETWEEN_GATES),
+                                                        left: Val::Px(PADDING_BETWEEN_GATES),
+                                                        position_type: PositionType::Absolute,
+                                                        ..Default::default()
+                                                    },
+                                                    ImageNode {
+                                                        image: gates.clone(),
+                                                        texture_atlas: Some(TextureAtlas {
+                                                            layout: gates_atlas_layout.clone(),
+                                                            index: 0,
+                                                        }),
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: and_b.l,
+                                                        right: and_b.r,
+                                                        out: and_b.out,
+                                                    },
+                                                ));
+                                                parent.spawn((
+                                                    Node {
+                                                        top: Val::Px(PADDING_BETWEEN_GATES),
+                                                        left: Val::Px(
+                                                            IMAGE_SIZE + PADDING_BETWEEN_GATES * 3.,
+                                                        ),
+                                                        position_type: PositionType::Absolute,
+                                                        ..Default::default()
+                                                    },
+                                                    ImageNode {
+                                                        image: gates.clone(),
+                                                        texture_atlas: Some(TextureAtlas {
+                                                            layout: gates_atlas_layout.clone(),
+                                                            index: 3,
+                                                        }),
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: xor_b.l,
+                                                        right: xor_b.r,
+                                                        out: xor_b.out,
+                                                    },
+                                                ));
+                                            });
+                                        parent.spawn((
                                             Node {
                                                 top: Val::Px(
-                                                    ADDER_PADDING * 4.
-                                                        + IMAGE_SIZE * 3.
-                                                        + PADDING_BETWEEN_GATES * 7.,
+                                                    ADDER_PADDING * 3.
+                                                        + IMAGE_SIZE * 2.
+                                                        + PADDING_BETWEEN_GATES * 5.,
                                                 ),
                                                 left: Val::Px(
                                                     ADDER_PADDING + PADDING_BETWEEN_GATES,
                                                 ),
-                                                min_width: Val::Px(IMAGE_SIZE),
-                                                min_height: Val::Px(IMAGE_SIZE),
                                                 position_type: PositionType::Absolute,
-                                                justify_content: JustifyContent::Center,
-                                                align_content: AlignContent::Center,
+                                                ..Default::default()
+                                            },
+                                            ImageNode {
+                                                image: gates.clone(),
+                                                texture_atlas: Some(TextureAtlas {
+                                                    layout: gates_atlas_layout.clone(),
+                                                    index: 2,
+                                                }),
                                                 ..Default::default()
                                             },
                                             Gate {
-                                                left: b"z45".to_owned(),
-                                                right: [0; 3],
-                                                out: [0; 3],
+                                                left: or.l,
+                                                right: or.r,
+                                                out: or.out,
                                             },
-                                        ))
-                                        .with_child((Text::new("z45"), TextColor(Color::BLACK)));
-                                }
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(
-                                                ADDER_PADDING * 4.
-                                                    + IMAGE_SIZE * 3.
-                                                    + PADDING_BETWEEN_GATES * 7.,
-                                            ),
-                                            left: Val::Px(
-                                                ADDER_PADDING
-                                                    + IMAGE_SIZE * 2.
-                                                    + PADDING_BETWEEN_GATES * 5.,
-                                            ),
-                                            min_width: Val::Px(IMAGE_SIZE),
-                                            min_height: Val::Px(IMAGE_SIZE),
-                                            position_type: PositionType::Absolute,
-                                            justify_content: JustifyContent::Center,
-                                            align_content: AlignContent::Center,
-                                            ..Default::default()
-                                        },
-                                        Gate {
-                                            left: zkey,
-                                            right: [0; 3],
-                                            out: [0; 3],
-                                        },
-                                    ))
-                                    .with_child((
-                                        Text::new(String::from_utf8_lossy(&zkey)),
-                                        TextColor(Color::BLACK),
-                                    ));
-                            });
-                    }
-                    [and, xor] => {
-                        assert_eq!(and.operator, Operator::And);
-                        assert_eq!(xor.operator, Operator::Xor);
+                                        ));
+                                        if index == 44 {
+                                            parent
+                                                .spawn((
+                                                    Node {
+                                                        top: Val::Px(
+                                                            ADDER_PADDING * 4.
+                                                                + IMAGE_SIZE * 3.
+                                                                + PADDING_BETWEEN_GATES * 7.,
+                                                        ),
+                                                        left: Val::Px(
+                                                            ADDER_PADDING + PADDING_BETWEEN_GATES,
+                                                        ),
+                                                        min_width: Val::Px(IMAGE_SIZE),
+                                                        min_height: Val::Px(IMAGE_SIZE),
+                                                        position_type: PositionType::Absolute,
+                                                        justify_content: JustifyContent::Center,
+                                                        align_content: AlignContent::Center,
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: b"z45".to_owned(),
+                                                        right: [0; 3],
+                                                        out: [0; 3],
+                                                    },
+                                                ))
+                                                .with_child((
+                                                    Text::new("z45"),
+                                                    TextColor(Color::BLACK),
+                                                ));
+                                        }
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(
+                                                        ADDER_PADDING * 4.
+                                                            + IMAGE_SIZE * 3.
+                                                            + PADDING_BETWEEN_GATES * 7.,
+                                                    ),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING
+                                                            + IMAGE_SIZE * 2.
+                                                            + PADDING_BETWEEN_GATES * 5.,
+                                                    ),
+                                                    min_width: Val::Px(IMAGE_SIZE),
+                                                    min_height: Val::Px(IMAGE_SIZE),
+                                                    position_type: PositionType::Absolute,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_content: AlignContent::Center,
+                                                    ..Default::default()
+                                                },
+                                                Gate {
+                                                    left: zkey,
+                                                    right: [0; 3],
+                                                    out: [0; 3],
+                                                },
+                                            ))
+                                            .with_child((
+                                                Text::new(String::from_utf8_lossy(&zkey)),
+                                                TextColor(Color::BLACK),
+                                            ));
+                                    });
+                            }
+                            [and, xor] => {
+                                assert_eq!(and.operator, Operator::And);
+                                assert_eq!(xor.operator, Operator::Xor);
 
-                        parent
-                            .spawn((
-                                Node {
-                                    min_width: Val::Px(
-                                        ADDER_PADDING * 2.
-                                            + IMAGE_SIZE * 3.
-                                            + PADDING_BETWEEN_GATES * 6.,
-                                    ),
-                                    max_height: Val::Px(
-                                        ADDER_PADDING * 5.
-                                            + IMAGE_SIZE * 4.
-                                            + PADDING_BETWEEN_GATES * 8.,
-                                    ),
-                                    ..Default::default()
-                                },
-                                BackgroundColor(palettes::tailwind::BLUE_100.into()),
-                            ))
-                            .with_children(|parent| {
                                 parent
                                     .spawn((
                                         Node {
-                                            top: Val::Px(ADDER_PADDING),
-                                            left: Val::Px(ADDER_PADDING + PADDING_BETWEEN_GATES),
-                                            min_width: Val::Px(IMAGE_SIZE),
-                                            min_height: Val::Px(IMAGE_SIZE),
-                                            position_type: PositionType::Absolute,
-                                            justify_content: JustifyContent::Center,
-                                            align_content: AlignContent::Center,
-                                            ..Default::default()
-                                        },
-                                        Gate {
-                                            left: [0; 3],
-                                            right: [0; 3],
-                                            out: xkey,
-                                        },
-                                    ))
-                                    .with_child((
-                                        Text::new(String::from_utf8_lossy(&xkey)),
-                                        TextColor(Color::BLACK),
-                                    ));
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(ADDER_PADDING),
-                                            left: Val::Px(
-                                                ADDER_PADDING
-                                                    + IMAGE_SIZE
-                                                    + PADDING_BETWEEN_GATES * 3.,
-                                            ),
-                                            min_width: Val::Px(IMAGE_SIZE),
-                                            min_height: Val::Px(IMAGE_SIZE),
-                                            position_type: PositionType::Absolute,
-                                            justify_content: JustifyContent::Center,
-                                            align_content: AlignContent::Center,
-                                            ..Default::default()
-                                        },
-                                        Gate {
-                                            left: [0; 3],
-                                            right: [0; 3],
-                                            out: ykey,
-                                        },
-                                    ))
-                                    .with_child((
-                                        Text::new(String::from_utf8_lossy(&ykey)),
-                                        TextColor(Color::BLACK),
-                                    ));
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(
-                                                ADDER_PADDING * 2.
-                                                    + IMAGE_SIZE
-                                                    + PADDING_BETWEEN_GATES * 2.,
-                                            ),
-                                            left: Val::Px(ADDER_PADDING),
                                             min_width: Val::Px(
-                                                IMAGE_SIZE * 2. + PADDING_BETWEEN_GATES * 4.,
+                                                ADDER_PADDING * 2.
+                                                    + IMAGE_SIZE * 3.
+                                                    + PADDING_BETWEEN_GATES * 6.,
                                             ),
-                                            min_height: Val::Px(
-                                                IMAGE_SIZE + PADDING_BETWEEN_GATES * 2.,
+                                            max_height: Val::Px(
+                                                ADDER_PADDING * 5.
+                                                    + IMAGE_SIZE * 4.
+                                                    + PADDING_BETWEEN_GATES * 8.,
                                             ),
-                                            position_type: PositionType::Absolute,
                                             ..Default::default()
                                         },
-                                        BackgroundColor(palettes::tailwind::BLUE_300.into()),
+                                        BackgroundColor(palettes::tailwind::BLUE_100.into()),
                                     ))
                                     .with_children(|parent| {
-                                        parent.spawn((
-                                            Node {
-                                                top: Val::Px(PADDING_BETWEEN_GATES),
-                                                left: Val::Px(PADDING_BETWEEN_GATES),
-                                                position_type: PositionType::Absolute,
-                                                ..Default::default()
-                                            },
-                                            ImageNode {
-                                                image: gates.clone(),
-                                                texture_atlas: Some(TextureAtlas {
-                                                    layout: gates_atlas_layout.clone(),
-                                                    index: 0,
-                                                }),
-                                                ..Default::default()
-                                            },
-                                            Gate {
-                                                left: and.l,
-                                                right: and.r,
-                                                out: and.out,
-                                            },
-                                        ));
-                                        parent.spawn((
-                                            Node {
-                                                top: Val::Px(PADDING_BETWEEN_GATES),
-                                                left: Val::Px(
-                                                    IMAGE_SIZE + PADDING_BETWEEN_GATES * 3.,
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(ADDER_PADDING),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING + PADDING_BETWEEN_GATES,
+                                                    ),
+                                                    min_width: Val::Px(IMAGE_SIZE),
+                                                    min_height: Val::Px(IMAGE_SIZE),
+                                                    position_type: PositionType::Absolute,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_content: AlignContent::Center,
+                                                    ..Default::default()
+                                                },
+                                                Gate {
+                                                    left: [0; 3],
+                                                    right: [0; 3],
+                                                    out: xkey,
+                                                },
+                                            ))
+                                            .with_child((
+                                                Text::new(String::from_utf8_lossy(&xkey)),
+                                                TextColor(Color::BLACK),
+                                            ));
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(ADDER_PADDING),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING
+                                                            + IMAGE_SIZE
+                                                            + PADDING_BETWEEN_GATES * 3.,
+                                                    ),
+                                                    min_width: Val::Px(IMAGE_SIZE),
+                                                    min_height: Val::Px(IMAGE_SIZE),
+                                                    position_type: PositionType::Absolute,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_content: AlignContent::Center,
+                                                    ..Default::default()
+                                                },
+                                                Gate {
+                                                    left: [0; 3],
+                                                    right: [0; 3],
+                                                    out: ykey,
+                                                },
+                                            ))
+                                            .with_child((
+                                                Text::new(String::from_utf8_lossy(&ykey)),
+                                                TextColor(Color::BLACK),
+                                            ));
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(
+                                                        ADDER_PADDING * 2.
+                                                            + IMAGE_SIZE
+                                                            + PADDING_BETWEEN_GATES * 2.,
+                                                    ),
+                                                    left: Val::Px(ADDER_PADDING),
+                                                    min_width: Val::Px(
+                                                        IMAGE_SIZE * 2.
+                                                            + PADDING_BETWEEN_GATES * 4.,
+                                                    ),
+                                                    min_height: Val::Px(
+                                                        IMAGE_SIZE + PADDING_BETWEEN_GATES * 2.,
+                                                    ),
+                                                    position_type: PositionType::Absolute,
+                                                    ..Default::default()
+                                                },
+                                                BackgroundColor(
+                                                    palettes::tailwind::BLUE_300.into(),
                                                 ),
-                                                position_type: PositionType::Absolute,
-                                                ..Default::default()
-                                            },
-                                            ImageNode {
-                                                image: gates.clone(),
-                                                texture_atlas: Some(TextureAtlas {
-                                                    layout: gates_atlas_layout.clone(),
-                                                    index: 3,
-                                                }),
-                                                ..Default::default()
-                                            },
-                                            Gate {
-                                                left: xor.l,
-                                                right: xor.r,
-                                                out: xor.out,
-                                            },
-                                        ));
+                                            ))
+                                            .with_children(|parent| {
+                                                parent.spawn((
+                                                    Node {
+                                                        top: Val::Px(PADDING_BETWEEN_GATES),
+                                                        left: Val::Px(PADDING_BETWEEN_GATES),
+                                                        position_type: PositionType::Absolute,
+                                                        ..Default::default()
+                                                    },
+                                                    ImageNode {
+                                                        image: gates.clone(),
+                                                        texture_atlas: Some(TextureAtlas {
+                                                            layout: gates_atlas_layout.clone(),
+                                                            index: 0,
+                                                        }),
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: and.l,
+                                                        right: and.r,
+                                                        out: and.out,
+                                                    },
+                                                ));
+                                                parent.spawn((
+                                                    Node {
+                                                        top: Val::Px(PADDING_BETWEEN_GATES),
+                                                        left: Val::Px(
+                                                            IMAGE_SIZE + PADDING_BETWEEN_GATES * 3.,
+                                                        ),
+                                                        position_type: PositionType::Absolute,
+                                                        ..Default::default()
+                                                    },
+                                                    ImageNode {
+                                                        image: gates.clone(),
+                                                        texture_atlas: Some(TextureAtlas {
+                                                            layout: gates_atlas_layout.clone(),
+                                                            index: 3,
+                                                        }),
+                                                        ..Default::default()
+                                                    },
+                                                    Gate {
+                                                        left: xor.l,
+                                                        right: xor.r,
+                                                        out: xor.out,
+                                                    },
+                                                ));
+                                            });
+                                        parent
+                                            .spawn((
+                                                Node {
+                                                    top: Val::Px(
+                                                        ADDER_PADDING * 4.
+                                                            + IMAGE_SIZE * 3.
+                                                            + PADDING_BETWEEN_GATES * 7.,
+                                                    ),
+                                                    left: Val::Px(
+                                                        ADDER_PADDING
+                                                            + IMAGE_SIZE
+                                                            + PADDING_BETWEEN_GATES * 3.,
+                                                    ),
+                                                    min_width: Val::Px(IMAGE_SIZE),
+                                                    min_height: Val::Px(IMAGE_SIZE),
+                                                    position_type: PositionType::Absolute,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_content: AlignContent::Center,
+                                                    ..Default::default()
+                                                },
+                                                Gate {
+                                                    left: zkey,
+                                                    right: [0; 3],
+                                                    out: [0; 3],
+                                                },
+                                            ))
+                                            .with_child((
+                                                Text::new(String::from_utf8_lossy(&zkey)),
+                                                TextColor(Color::BLACK),
+                                            ));
                                     });
-                                parent
-                                    .spawn((
-                                        Node {
-                                            top: Val::Px(
-                                                ADDER_PADDING * 4.
-                                                    + IMAGE_SIZE * 3.
-                                                    + PADDING_BETWEEN_GATES * 7.,
-                                            ),
-                                            left: Val::Px(
-                                                ADDER_PADDING
-                                                    + IMAGE_SIZE
-                                                    + PADDING_BETWEEN_GATES * 3.,
-                                            ),
-                                            min_width: Val::Px(IMAGE_SIZE),
-                                            min_height: Val::Px(IMAGE_SIZE),
-                                            position_type: PositionType::Absolute,
-                                            justify_content: JustifyContent::Center,
-                                            align_content: AlignContent::Center,
-                                            ..Default::default()
-                                        },
-                                        Gate {
-                                            left: zkey,
-                                            right: [0; 3],
-                                            out: [0; 3],
-                                        },
-                                    ))
-                                    .with_child((
-                                        Text::new(String::from_utf8_lossy(&zkey)),
-                                        TextColor(Color::BLACK),
-                                    ));
-                            });
+                            }
+                            _ => unreachable!("Should be N * 5 + 2."),
+                        };
                     }
-                    _ => unreachable!("Should be N * 5 + 2."),
-                };
-            }
-        })
-        .id()
+                })
+                .id();
+
+            build_control_buttons(parent, window);
+        });
 }
 
-fn build_control_buttons(parent: &mut ChildBuilder) {
+fn build_control_buttons(parent: &mut ChildBuilder, window: Entity) {
     let font = FONT_SYMBOLS_2_HANDLE
         .get()
         .expect("Font should be initialized.");
     parent
-        .spawn((
-            button_node(),
-            Controls::Reset,
-            BackgroundColor(BUTTON_BACKGROUND_COLOR),
-        ))
-        .with_child((
-            Text::new("⏮"),
-            TextFont {
-                font: font.clone(),
-                ..Default::default()
-            },
-            TextColor(Color::BLACK),
-        ));
-    parent
-        .spawn((
-            button_node(),
-            Controls::FastForward,
-            BackgroundColor(BUTTON_BACKGROUND_COLOR),
-        ))
-        .with_child((
-            Text::new("⏭"),
-            TextFont {
-                font: font.clone(),
-                ..Default::default()
-            },
-            TextColor(Color::BLACK),
-        ));
+        .spawn(Node {
+            bottom: Val::Px(5.),
+            left: Val::Px(5.),
+            position_type: PositionType::Absolute,
+            flex_direction: FlexDirection::Row,
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    button_node(),
+                    ScrollControl {
+                        horizontal: -SCROLL_SPEED,
+                        vertical: 0.,
+                        target: window,
+                    },
+                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
+                ))
+                .with_child((
+                    Text::new("⏮"),
+                    TextFont {
+                        font: font.clone(),
+                        ..Default::default()
+                    },
+                    TextColor(Color::BLACK),
+                ));
+            parent
+                .spawn((
+                    button_node(),
+                    ScrollControl {
+                        horizontal: SCROLL_SPEED,
+                        vertical: 0.,
+                        target: window,
+                    },
+                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
+                ))
+                .with_child((
+                    Text::new("⏭"),
+                    TextFont {
+                        font: font.clone(),
+                        ..Default::default()
+                    },
+                    TextColor(Color::BLACK),
+                ));
+        });
 }
