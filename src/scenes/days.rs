@@ -8,9 +8,11 @@ use bevy::{
     },
 };
 
+use crate::scroll_controls::BUTTON_BACKGROUND_COLOR;
+
 use super::{
     components::{PartChange, StateChange},
-    BUTTON_BACKGROUND_COLOR, FONT_HANDLE,
+    FONT_HANDLE,
 };
 
 pub fn build_header(commands: &mut Commands, day: &str, part_change: bool) -> Entity {

@@ -25,12 +25,15 @@ use bevy::{
 use components::{usable_key_on_lock, Key, Lock};
 use resources::Hovered;
 
-use crate::{loader::Input as InputAsset, scenes::states::States as SceneStates};
+use crate::{
+    loader::Input as InputAsset,
+    scenes::states::States as SceneStates,
+    scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
+};
 
 use super::{
     components::StateChange,
     days::{build_content, build_footer, build_header},
-    BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR,
 };
 
 const PIXEL_PER_UNIT: u32 = 1;

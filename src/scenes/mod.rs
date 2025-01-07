@@ -1,4 +1,5 @@
 mod components;
+mod day01;
 mod day24;
 mod day25;
 mod days;
@@ -10,7 +11,6 @@ use std::sync::OnceLock;
 use bevy::{
     app::Startup,
     asset::{AssetServer, Handle},
-    color::Color,
     prelude::{AppExtStates, Button, Changed, Entity, NextState, Query, Res, ResMut, With},
     state::state::FreelyMutableState,
     text::Font,
@@ -18,12 +18,11 @@ use bevy::{
 };
 use components::{PartChange, StateChange};
 
+use crate::scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR};
+
 static FONT_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
 static FONT_SYMBOLS_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
 static FONT_SYMBOLS_2_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
-
-const BUTTON_BACKGROUND_COLOR: Color = Color::srgb(0.7, 0.7, 0.7);
-const BUTTON_HOVERED_BACKGROUND_COLOR: Color = Color::srgb(0.8, 0.8, 0.9);
 
 type ButtonWithChangedInteractionQuery<'a, 'b> = Query<
     'a,
@@ -36,7 +35,12 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins((main_menu::Plugin, day24::Plugin, day25::Plugin));
+        app.add_plugins((
+            main_menu::Plugin,
+            day01::Plugin,
+            day24::Plugin,
+            day25::Plugin,
+        ));
 
         app.init_state::<states::States>();
 

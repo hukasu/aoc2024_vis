@@ -1,5 +1,6 @@
 mod loader;
 mod scenes;
+pub mod scroll_controls;
 
 #[cfg(feature = "with_inspector")]
 use bevy::remote::{http::RemoteHttpPlugin, RemotePlugin};
@@ -14,7 +15,7 @@ use bevy::{
 fn main() {
     let mut app = App::new();
 
-    app.add_plugins((DefaultPlugins, scenes::Plugin));
+    app.add_plugins((DefaultPlugins, scenes::Plugin, scroll_controls::Plugin));
     #[cfg(feature = "with_inspector")]
     app.add_plugins((RemotePlugin::default(), RemoteHttpPlugin::default()));
 
