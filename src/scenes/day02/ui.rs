@@ -1,0 +1,245 @@
+use bevy::{
+    app::Update,
+    color::{palettes, Color},
+    prelude::{
+        in_state, BuildChildren, ChildBuild, ChildBuilder, Commands, IntoSystemConfigs, NextState,
+        Res, ResMut, Text,
+    },
+    text::{TextColor, TextFont},
+    ui::{
+        BackgroundColor, BorderColor, BorderRadius, FlexDirection, JustifyContent, Node, Overflow,
+        PositionType, UiRect, Val,
+    },
+};
+
+use crate::{
+    scenes::{
+        days::{build_content, build_header},
+        FONT_SYMBOLS_HANDLE,
+    },
+    scroll_controls::{ScrollControl, ScrollWindow, BUTTON_BACKGROUND_COLOR},
+};
+
+use super::{
+    input::{self, Safety},
+    resources, states,
+};
+
+const SCROLL_SPEED: f32 = 512.;
+
+pub struct Plugin;
+
+impl bevy::app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_systems(
+            Update,
+            build_ui.run_if(in_state(states::VisualizationState::WaitingUi)),
+        );
+    }
+}
+
+fn build_ui(
+    mut commands: Commands,
+    day2_resource: Res<resources::Day02>,
+    input: Res<input::Input>,
+    mut next_state: ResMut<NextState<states::UiState>>,
+) {
+    bevy::log::trace!("Day 2");
+    let header = build_header(&mut commands, "day2", false);
+    let content = build_content(&mut commands, "day2");
+
+    commands
+        .entity(content)
+        .with_children(|parent| build_visualization(parent, &input));
+
+    commands
+        .entity(day2_resource.ui)
+        .add_children(&[header, content]);
+
+    next_state.set(states::UiState::Loaded);
+}
+
+fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
+    let safe = input
+        .reports
+        .iter()
+        .filter(|report| matches!(report.safety, Safety::Safe))
+        .count();
+    let kinda_safe = input
+        .reports
+        .iter()
+        .filter(|report| matches!(report.safety, Safety::Safe | Safety::OneError(_)))
+        .count();
+
+    parent
+        .spawn(Node {
+            top: Val::Px(50.),
+            bottom: Val::Px(0.),
+            left: Val::Px(10.),
+            right: Val::Px(10.),
+            position_type: PositionType::Absolute,
+            flex_direction: FlexDirection::Row,
+            column_gap: Val::Px(10.),
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(Node {
+                    flex_direction: FlexDirection::Column,
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent
+                        .spawn(Node {
+                            padding: UiRect::all(Val::Px(3.)),
+                            ..Default::default()
+                        })
+                        .with_child(Text::new("Safe"));
+                    parent
+                        .spawn((
+                            Node {
+                                border: UiRect::all(Val::Px(5.)),
+                                padding: UiRect::all(Val::Px(3.)),
+                                ..Default::default()
+                            },
+                            BorderColor(Color::WHITE),
+                            BorderRadius::all(Val::Px(5.)),
+                        ))
+                        .with_child(Text::new(safe.to_string()));
+                    parent
+                        .spawn(Node {
+                            padding: UiRect::all(Val::Px(3.)),
+                            ..Default::default()
+                        })
+                        .with_child(Text::new("Almost Safe"));
+                    parent
+                        .spawn((
+                            Node {
+                                border: UiRect::all(Val::Px(5.)),
+                                padding: UiRect::all(Val::Px(3.)),
+                                ..Default::default()
+                            },
+                            BorderColor(Color::WHITE),
+                            BorderRadius::all(Val::Px(5.)),
+                        ))
+                        .with_child(Text::new(kinda_safe.to_string()));
+                });
+
+            parent
+                .spawn(Node {
+                    flex_direction: FlexDirection::Column,
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    let window = parent
+                        .spawn((
+                            Node {
+                                flex_direction: FlexDirection::Column,
+                                overflow: Overflow::scroll_y(),
+                                row_gap: Val::Px(3.),
+                                ..Default::default()
+                            },
+                            ScrollWindow,
+                        ))
+                        .with_children(|parent| {
+                            for report in &input.reports {
+                                let border_color = match report.safety {
+                                    Safety::Safe => palettes::basic::GREEN,
+                                    Safety::OneError(_) => palettes::basic::YELLOW,
+                                    Safety::Unsafe => palettes::basic::RED,
+                                };
+                                parent
+                                    .spawn((
+                                        Node {
+                                            flex_direction: FlexDirection::Row,
+                                            column_gap: Val::Px(8.),
+                                            border: UiRect::all(Val::Px(5.)),
+                                            padding: UiRect::all(Val::Px(3.)),
+                                            ..Default::default()
+                                        },
+                                        BorderColor(border_color.into()),
+                                        BorderRadius::all(Val::Px(5.)),
+                                    ))
+                                    .with_children(|parent| {
+                                        let unsafe_val =
+                                            if let Safety::OneError(err) = report.safety {
+                                                err
+                                            } else {
+                                                usize::MAX
+                                            };
+                                        for (i, val) in report.report.iter().enumerate() {
+                                            let text_color = if i == unsafe_val {
+                                                palettes::basic::RED.into()
+                                            } else {
+                                                Color::WHITE
+                                            };
+                                            parent.spawn(Node::default()).with_child((
+                                                Text::new(val.to_string()),
+                                                TextColor(text_color),
+                                            ));
+                                        }
+                                    });
+                            }
+                        })
+                        .id();
+
+                    parent
+                        .spawn((Node {
+                            bottom: Val::Px(1.),
+                            right: Val::Px(1.),
+                            position_type: PositionType::Absolute,
+                            flex_direction: FlexDirection::Column,
+                            row_gap: Val::Px(5.),
+                            ..Default::default()
+                        },))
+                        .with_children(|parent| {
+                            parent
+                                .spawn((
+                                    Node {
+                                        width: Val::Px(25.),
+                                        height: Val::Px(25.),
+                                        justify_content: JustifyContent::Center,
+                                        ..Default::default()
+                                    },
+                                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
+                                    ScrollControl {
+                                        horizontal: 0.,
+                                        vertical: -SCROLL_SPEED,
+                                        target: window,
+                                    },
+                                ))
+                                .with_child((
+                                    Text::new("↑"),
+                                    TextColor::BLACK,
+                                    TextFont {
+                                        font: FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
+                                        ..Default::default()
+                                    },
+                                ));
+                            parent
+                                .spawn((
+                                    Node {
+                                        width: Val::Px(25.),
+                                        height: Val::Px(25.),
+                                        justify_content: JustifyContent::Center,
+                                        ..Default::default()
+                                    },
+                                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
+                                    ScrollControl {
+                                        horizontal: 0.,
+                                        vertical: SCROLL_SPEED,
+                                        target: window,
+                                    },
+                                ))
+                                .with_child((
+                                    Text::new("↓"),
+                                    TextColor::BLACK,
+                                    TextFont {
+                                        font: FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
+                                        ..Default::default()
+                                    },
+                                ));
+                        });
+                });
+        });
+}

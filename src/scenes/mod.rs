@@ -1,5 +1,6 @@
 mod components;
 mod day01;
+mod day02;
 mod day24;
 mod day25;
 mod days;
@@ -38,6 +39,7 @@ impl bevy::app::Plugin for Plugin {
         app.add_plugins((
             main_menu::Plugin,
             day01::Plugin,
+            day02::Plugin,
             day24::Plugin,
             day25::Plugin,
         ));
