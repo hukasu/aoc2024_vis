@@ -116,7 +116,8 @@ impl Input {
                 (StateMachine::ReadQuote, 't') => StateMachine::ReadT,
                 (StateMachine::ReadT, '(') => StateMachine::ReadLParen(2),
                 (StateMachine::ReadLParen(1), ')') => {
-                    let new_segment = std::mem::take(&mut segment);
+                    let mut new_segment = std::mem::take(&mut segment);
+                    new_segment.enabled = true;
 
                     enabled = true;
                     segment = Segment {
