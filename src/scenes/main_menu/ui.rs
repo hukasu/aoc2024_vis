@@ -128,7 +128,7 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                     },
                 ))
                 .with_children(|parent| {
-                    for i in 1..=2 {
+                    for i in 1..=3 {
                         parent.spawn((
                             Name::new(format!("main_menu_day_{i}")),
                             Text::new(format!("Day {i}")),
@@ -140,7 +140,7 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                             StateChange(ScenesStates::Day(i)),
                         ));
                     }
-                    for i in 3..=10 {
+                    for i in 4..=10 {
                         parent.spawn((
                             Name::new(format!("main_menu_day_{i}")),
                             Text::new(format!("Day {i}")),
