@@ -24,7 +24,7 @@ use crate::{
 
 use super::{input::Input, resources::Day01, states};
 
-const SCROLL_SPEED: f32 = 128.;
+const SCROLL_SPEED: f32 = 512.;
 const VAL_GRID_WIDTH: f32 = 130.;
 
 pub struct Plugin;

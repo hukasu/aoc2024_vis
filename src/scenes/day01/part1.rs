@@ -26,7 +26,7 @@ use super::{
     states::{self, States, VisualizationState},
 };
 
-const SCROLL_SPEED: f32 = 128.;
+const SCROLL_SPEED: f32 = 512.;
 const VAL_GRID_WIDTH: f32 = 80.;
 
 pub struct Plugin;
