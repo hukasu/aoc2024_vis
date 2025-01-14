@@ -84,7 +84,6 @@ fn process_input(
     inputs: Res<Assets<InputAsset>>,
     mut next_state: ResMut<NextState<states::InputState>>,
 ) {
-    bevy::log::error!("process_input");
     if let Some(input) = inputs.get(day2_resource.input.id()) {
         commands.insert_resource(Input::parse(input));
         next_state.set(states::InputState::Loaded);
