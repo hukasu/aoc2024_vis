@@ -24,17 +24,13 @@ use bevy::{
 use components::{usable_key_on_lock, Key, Lock};
 use resources::Hovered;
 
-use crate::{
-    loader::RawInput,
-    scenes::states::Scene as SceneStates,
-    scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
-};
+use crate::{loader::RawInput, scenes::states::Scene as SceneStates};
 
 use super::{
-    components::SceneChange,
     days::{build_content, build_footer, build_header},
     resources::GenericDay,
-    states::{InputState, UiState, VisualizationState},
+    state_button_interactions,
+    states::{InputState, Part, UiState, VisualizationState},
 };
 
 const PIXEL_PER_UNIT: u32 = 1;
@@ -59,7 +55,7 @@ impl bevy::app::Plugin for Plugin {
             )
             .add_systems(
                 Update,
-                state_button_interactions.run_if(in_state(VisualizationState::<25>::Ready)),
+                state_button_interactions::<Part>.run_if(in_state(VisualizationState::<25>::Ready)),
             )
             .add_systems(
                 Update,
@@ -214,24 +210,6 @@ fn destroy_day_25(mut commands: Commands, day25_resource: Res<GenericDay>) {
     commands.entity(day25_resource.ui).despawn_recursive();
 
     commands.remove_resource::<GenericDay>();
-}
-
-fn state_button_interactions(
-    mut buttons: ButtonWithChangedInteractionQuery,
-    state_changes: Query<&SceneChange>,
-    mut next_state: ResMut<NextState<SceneStates>>,
-) {
-    for (button, mut background_color, interaction) in buttons.iter_mut() {
-        match interaction {
-            Interaction::None => background_color.0 = BUTTON_BACKGROUND_COLOR,
-            Interaction::Hovered => background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR,
-            Interaction::Pressed => {
-                if let Ok(state_change) = state_changes.get(button) {
-                    next_state.set(state_change.0);
-                }
-            }
-        }
-    }
 }
 
 fn process_input(

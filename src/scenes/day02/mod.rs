@@ -7,24 +7,20 @@ use bevy::{
     color::Color,
     core::Name,
     prelude::{
-        in_state, AppExtStates, Button, Camera2d, Changed, ClearColor, Commands,
-        DespawnRecursiveExt, Entity, IntoSystemConfigs, NextState, OnEnter, OnExit, Query, Res,
-        ResMut, With,
+        in_state, AppExtStates, Camera2d, ClearColor, Commands, DespawnRecursiveExt,
+        IntoSystemConfigs, NextState, OnEnter, OnExit, Res, ResMut,
     },
-    ui::{BackgroundColor, FlexDirection, Interaction, Node, TargetCamera, Val},
+    ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
-use crate::{
-    loader::RawInput,
-    scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
-};
+use crate::loader::RawInput;
 
 use input::Input;
 
 use super::{
-    components::SceneChange,
     resources::GenericDay,
-    states::{InputState, Scene, VisualizationState},
+    state_button_interactions,
+    states::{InputState, Part, Scene, VisualizationState},
 };
 
 pub struct Plugin;
@@ -43,7 +39,7 @@ impl bevy::app::Plugin for Plugin {
             )
             .add_systems(
                 Update,
-                state_button_interactions.run_if(in_state(Scene::Day(2))),
+                state_button_interactions::<Part>.run_if(in_state(Scene::Day(2))),
             );
     }
 }
@@ -87,30 +83,5 @@ fn process_input(
     if let Some(input) = inputs.get(day2_resource.input.id()) {
         commands.insert_resource(Input::parse(input));
         next_state.set(InputState::Loaded);
-    }
-}
-
-type ButtonWithChangedInteractionQuery<'a, 'b> = Query<
-    'a,
-    'b,
-    (Entity, &'static mut BackgroundColor, &'static Interaction),
-    (With<Button>, Changed<Interaction>),
->;
-
-fn state_button_interactions(
-    mut buttons: ButtonWithChangedInteractionQuery,
-    state_changes: Query<&SceneChange>,
-    mut next_state: ResMut<NextState<Scene>>,
-) {
-    for (button, mut background_color, interaction) in buttons.iter_mut() {
-        match interaction {
-            Interaction::None => background_color.0 = BUTTON_BACKGROUND_COLOR,
-            Interaction::Hovered => background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR,
-            Interaction::Pressed => {
-                if let Ok(state_change) = state_changes.get(button) {
-                    next_state.set(state_change.0);
-                }
-            }
-        }
     }
 }
