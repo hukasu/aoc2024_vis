@@ -21,7 +21,7 @@ use input::Input;
 use super::{
     resources::GenericDay,
     state_button_interactions,
-    states::{InputState, Part, VisualizationState},
+    states::{InputState, Part, Scene, VisualizationState},
 };
 
 pub struct Plugin;
@@ -32,15 +32,15 @@ impl bevy::app::Plugin for Plugin {
 
         app.add_computed_state::<VisualizationState<3>>();
 
-        app.add_systems(OnEnter(super::states::Scene::Day(3)), build_day_3)
-            .add_systems(OnExit(super::states::Scene::Day(3)), destroy_day_3)
+        app.add_systems(OnEnter(Scene::Day(3)), build_day_3)
+            .add_systems(OnExit(Scene::Day(3)), destroy_day_3)
             .add_systems(
                 Update,
                 process_input.run_if(in_state(VisualizationState::<3>::WaitingInput)),
             )
             .add_systems(
                 Update,
-                state_button_interactions::<Part>.run_if(in_state(super::states::Scene::Day(3))),
+                state_button_interactions::<Part>.run_if(in_state(Scene::Day(3))),
             );
     }
 }

@@ -12,6 +12,7 @@ use crate::scroll_controls::BUTTON_BACKGROUND_COLOR;
 
 use super::{
     components::{PartChange, SceneChange},
+    states::Scene,
     FONT_HANDLE,
 };
 
@@ -87,7 +88,7 @@ fn build_state_buttons(parent: &mut ChildBuilder, part_change: bool) {
             button_node(),
             BackgroundColor(BUTTON_BACKGROUND_COLOR),
             Button,
-            SceneChange(super::states::Scene::MainMenu),
+            SceneChange(Scene::MainMenu),
         ))
         .with_child((
             Text::new("Exit"),
