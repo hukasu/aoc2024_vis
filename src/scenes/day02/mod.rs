@@ -1,5 +1,4 @@
 mod input;
-mod resources;
 mod states;
 mod ui;
 
@@ -23,7 +22,7 @@ use crate::{
 
 use input::Input;
 
-use super::components::StateChange;
+use super::{components::StateChange, resources::GenericDay};
 
 pub struct Plugin;
 
@@ -50,7 +49,7 @@ impl bevy::app::Plugin for Plugin {
 
 fn build_day_2(mut commands: Commands, asset_server: Res<AssetServer>) {
     let camera = commands.spawn((Name::new("day2_camera"), Camera2d)).id();
-    let day1_resource = resources::Day02 {
+    let day2_resource = GenericDay {
         input: asset_server.load("inputs/day2.txt"),
         camera,
         ui: commands
@@ -68,19 +67,19 @@ fn build_day_2(mut commands: Commands, asset_server: Res<AssetServer>) {
     };
 
     commands.insert_resource(ClearColor(Color::srgb_u8(0x0f, 0x0f, 0x23)));
-    commands.insert_resource(day1_resource);
+    commands.insert_resource(day2_resource);
 }
 
-fn destroy_day_2(mut commands: Commands, day2_resource: Res<resources::Day02>) {
+fn destroy_day_2(mut commands: Commands, day2_resource: Res<GenericDay>) {
     commands.entity(day2_resource.camera).despawn_recursive();
     commands.entity(day2_resource.ui).despawn_recursive();
 
-    commands.remove_resource::<resources::Day02>();
+    commands.remove_resource::<GenericDay>();
 }
 
 fn process_input(
     mut commands: Commands,
-    day2_resource: Res<resources::Day02>,
+    day2_resource: Res<GenericDay>,
     inputs: Res<Assets<RawInput>>,
     mut next_state: ResMut<NextState<states::InputState>>,
 ) {

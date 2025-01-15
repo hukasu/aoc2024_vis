@@ -6,6 +6,7 @@ mod day24;
 mod day25;
 mod days;
 mod main_menu;
+mod resources;
 mod states;
 
 use std::sync::OnceLock;

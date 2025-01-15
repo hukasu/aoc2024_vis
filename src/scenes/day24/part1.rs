@@ -19,13 +19,14 @@ use bevy::{
 
 use crate::scenes::{
     days::{build_content, build_footer, build_header, button_node},
+    resources::GenericDay,
     BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, FONT_HANDLE, FONT_SYMBOLS_2_HANDLE,
     FONT_SYMBOLS_HANDLE,
 };
 
 use super::{
     components::{Controls, Wire},
-    resources::{Day24, ExecutionResult, Input},
+    input::{ExecutionResult, Input},
     states::States,
 };
 
@@ -72,7 +73,7 @@ type ControlWithChangedInteractionQuery<'a, 'b> = Query<
 fn controls_interaction(
     mut commands: Commands,
     mut controls: ControlWithChangedInteractionQuery,
-    day24: Res<Day24>,
+    day24: Res<GenericDay>,
     mut input: ResMut<Input>,
 ) {
     for (mut background_color, interaction, control) in controls.iter_mut() {
@@ -104,14 +105,14 @@ fn controls_interaction(
     }
 }
 
-fn build_ui(mut commands: Commands, day24_resource: Res<Day24>, input: Res<Input>) {
+fn build_ui(mut commands: Commands, day24_resource: Res<GenericDay>, input: Res<Input>) {
     bevy::log::trace!("Day 24 Part 1");
     build_part1_ui(&mut commands, &day24_resource, &input, None);
 }
 
 fn build_part1_ui(
     commands: &mut Commands,
-    day24_resource: &Day24,
+    day24_resource: &GenericDay,
     input: &Input,
     execution_result: Option<ExecutionResult>,
 ) {
@@ -129,7 +130,7 @@ fn build_part1_ui(
         .add_children(&[header, content, footer]);
 }
 
-fn destroy_ui(mut commands: Commands, day24_resource: Res<Day24>) {
+fn destroy_ui(mut commands: Commands, day24_resource: Res<GenericDay>) {
     commands.remove_resource::<Input>();
     commands.entity(day24_resource.ui).despawn_descendants();
 }

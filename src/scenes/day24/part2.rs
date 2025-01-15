@@ -26,6 +26,7 @@ use crate::{
     scenes::{
         day24::{components::Gate, operation::Operator},
         days::{build_content, build_header, button_node},
+        resources::GenericDay,
         BUTTON_BACKGROUND_COLOR, FONT_SYMBOLS_2_HANDLE,
     },
     scroll_controls::{ScrollControl, ScrollWindow},
@@ -33,7 +34,7 @@ use crate::{
 
 use super::{
     components::{Adder, GizmosCamera},
-    resources::{Day24, Input},
+    input::Input,
     states::States,
 };
 
@@ -115,7 +116,7 @@ fn draw_connections(
 
 fn build_ui(
     mut commands: Commands,
-    day24_resource: Res<Day24>,
+    day24_resource: Res<GenericDay>,
     input: Res<Input>,
     asset_server: Res<AssetServer>,
 ) {
@@ -142,7 +143,7 @@ fn build_ui(
         .add_children(&[header, content]);
 }
 
-fn destroy_ui(mut commands: Commands, day24_resource: Res<Day24>) {
+fn destroy_ui(mut commands: Commands, day24_resource: Res<GenericDay>) {
     commands.remove_resource::<Input>();
     commands.entity(day24_resource.ui).despawn_descendants();
 }

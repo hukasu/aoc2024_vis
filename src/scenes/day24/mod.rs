@@ -1,8 +1,8 @@
 mod components;
+mod input;
 mod operation;
 mod part1;
 mod part2;
-mod resources;
 mod states;
 
 use bevy::{
@@ -19,9 +19,9 @@ use bevy::{
 
 use crate::{loader::RawInput, scenes::states::States as SceneStates};
 
-use super::state_button_interactions;
+use super::{resources::GenericDay, state_button_interactions};
 
-use self::resources::{Day24, Input};
+use self::input::Input;
 
 pub struct Plugin;
 
@@ -42,7 +42,7 @@ impl bevy::app::Plugin for Plugin {
 
 fn build_day_24(mut commands: Commands, asset_server: Res<AssetServer>) {
     let camera = commands.spawn((Name::new("day24_camera"), Camera2d)).id();
-    let day24_resource = resources::Day24 {
+    let day24_resource = GenericDay {
         input: asset_server.load("inputs/day24.txt"),
         camera,
         ui: commands
@@ -63,14 +63,14 @@ fn build_day_24(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(day24_resource);
 }
 
-fn destroy_day_24(mut commands: Commands, day24_resource: Res<resources::Day24>) {
+fn destroy_day_24(mut commands: Commands, day24_resource: Res<GenericDay>) {
     commands.entity(day24_resource.camera).despawn_recursive();
     commands.entity(day24_resource.ui).despawn_recursive();
 
-    commands.remove_resource::<resources::Day24>();
+    commands.remove_resource::<GenericDay>();
 }
 
-fn process_input(mut commands: Commands, day24: Res<Day24>, inputs: Res<Assets<RawInput>>) {
+fn process_input(mut commands: Commands, day24: Res<GenericDay>, inputs: Res<Assets<RawInput>>) {
     if let Some(input) = inputs.get(day24.input.id()) {
         commands.insert_resource(Input::parse(input));
     }

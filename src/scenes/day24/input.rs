@@ -1,20 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use bevy::{
-    asset::Handle,
-    prelude::{Entity, Resource},
-};
+use bevy::prelude::Resource;
 
 use crate::loader::RawInput;
 
 use super::operation::{Operation, Operator};
-
-#[derive(Debug, Resource)]
-pub struct Day24 {
-    pub input: Handle<RawInput>,
-    pub camera: Entity,
-    pub ui: Entity,
-}
 
 pub type ExecutionResult = Result<([u8; 3], [u8; 3], [u8; 3]), ([u8; 3], [u8; 3])>;
 

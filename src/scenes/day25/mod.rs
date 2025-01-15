@@ -34,6 +34,7 @@ use crate::{
 use super::{
     components::StateChange,
     days::{build_content, build_footer, build_header},
+    resources::GenericDay,
 };
 
 const PIXEL_PER_UNIT: u32 = 1;
@@ -189,7 +190,7 @@ fn clear_keys(mut keys: Query<&mut BorderColor, (With<Key>, Without<Lock>)>) {
 
 fn build_day_25(mut commands: Commands, asset_server: Res<AssetServer>) {
     let camera = commands.spawn((Name::new("day25_camera"), Camera2d)).id();
-    let day25_resource = resources::Day25 {
+    let day25_resource = GenericDay {
         input: asset_server.load("inputs/day25.txt"),
         camera,
         ui: commands
@@ -210,11 +211,11 @@ fn build_day_25(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(day25_resource);
 }
 
-fn destroy_day_25(mut commands: Commands, day25_resource: Res<resources::Day25>) {
+fn destroy_day_25(mut commands: Commands, day25_resource: Res<GenericDay>) {
     commands.entity(day25_resource.camera).despawn_recursive();
     commands.entity(day25_resource.ui).despawn_recursive();
 
-    commands.remove_resource::<resources::Day25>();
+    commands.remove_resource::<GenericDay>();
 }
 
 fn state_button_interactions(
@@ -237,7 +238,7 @@ fn state_button_interactions(
 
 fn process_input(
     mut commands: Commands,
-    day25: Res<resources::Day25>,
+    day25: Res<GenericDay>,
     inputs: Res<Assets<RawInput>>,
     mut next_state: ResMut<NextState<states::InputState>>,
 ) {
@@ -249,7 +250,7 @@ fn process_input(
 
 fn build_ui(
     mut commands: Commands,
-    day25_resource: Res<resources::Day25>,
+    day25_resource: Res<GenericDay>,
     input: Res<input::Input>,
     mut images: ResMut<Assets<Image>>,
     mut next_state: ResMut<NextState<states::UiState>>,

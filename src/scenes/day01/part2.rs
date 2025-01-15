@@ -17,12 +17,13 @@ use bevy::{
 use crate::{
     scenes::{
         days::{build_content, build_header},
+        resources::GenericDay,
         FONT_SYMBOLS_HANDLE,
     },
     scroll_controls::{ScrollControl, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
 
-use super::{input::Input, resources::Day01, states};
+use super::{input::Input, states};
 
 const SCROLL_SPEED: f32 = 512.;
 const VAL_GRID_WIDTH: f32 = 130.;
@@ -52,7 +53,7 @@ impl bevy::app::Plugin for Plugin {
 
 fn build_ui(
     mut commands: Commands,
-    day1_resource: Res<Day01>,
+    day1_resource: Res<GenericDay>,
     input: Res<Input>,
     mut next_state: ResMut<NextState<states::UiState>>,
 ) {
@@ -73,7 +74,7 @@ fn build_ui(
 
 fn destroy_ui(
     mut commands: Commands,
-    day1_resource: Res<Day01>,
+    day1_resource: Res<GenericDay>,
     mut input_state: ResMut<NextState<states::InputState>>,
     mut ui_state: ResMut<NextState<states::UiState>>,
 ) {
