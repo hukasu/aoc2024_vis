@@ -16,12 +16,13 @@ use crate::{
     scenes::{
         days::{build_content, build_header},
         resources::GenericDay,
+        states::{InputState, Part, UiState, VisualizationState},
         FONT_HANDLE, FONT_SYMBOLS_HANDLE,
     },
     scroll_controls::{ScrollControl, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
 
-use super::{input::Input, states};
+use super::input::Input;
 
 const SCROLL_SPEED: f32 = 512.;
 
@@ -32,18 +33,15 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(
             Update,
             build_ui
-                .run_if(in_state(states::States::Part2))
-                .run_if(in_state(states::VisualizationState::WaitingUi)),
+                .run_if(in_state(Part::Part2))
+                .run_if(in_state(VisualizationState::<3>::WaitingUi)),
         )
-        .add_systems(
-            OnExit(states::States::Part2),
-            destroy_ui.before(super::destroy_day_3),
-        )
+        .add_systems(OnExit(Part::Part2), destroy_ui.before(super::destroy_day_3))
         .add_systems(
             Update,
             super::process_input
-                .run_if(in_state(states::States::Part2))
-                .run_if(in_state(states::VisualizationState::WaitingInput)),
+                .run_if(in_state(Part::Part2))
+                .run_if(in_state(VisualizationState::<3>::WaitingInput)),
         );
     }
 }
@@ -52,7 +50,7 @@ fn build_ui(
     mut commands: Commands,
     day1_resource: Res<GenericDay>,
     input: Res<Input>,
-    mut next_state: ResMut<NextState<states::UiState>>,
+    mut next_state: ResMut<NextState<UiState>>,
 ) {
     bevy::log::trace!("Day 1 Part 2");
     let header = build_header(&mut commands, "day1", true);
@@ -66,20 +64,20 @@ fn build_ui(
         .entity(day1_resource.ui)
         .add_children(&[header, content]);
 
-    next_state.set(states::UiState::Loaded);
+    next_state.set(UiState::Loaded);
 }
 
 fn destroy_ui(
     mut commands: Commands,
     day1_resource: Res<GenericDay>,
-    mut input_state: ResMut<NextState<states::InputState>>,
-    mut ui_state: ResMut<NextState<states::UiState>>,
+    mut input_state: ResMut<NextState<InputState>>,
+    mut ui_state: ResMut<NextState<UiState>>,
 ) {
     commands.remove_resource::<Input>();
     commands.entity(day1_resource.ui).despawn_descendants();
 
-    input_state.set(states::InputState::NotLoaded);
-    ui_state.set(states::UiState::NotLoaded);
+    input_state.set(InputState::NotLoaded);
+    ui_state.set(UiState::NotLoaded);
 }
 
 fn build_visualization(parent: &mut ChildBuilder, input: &Input) {

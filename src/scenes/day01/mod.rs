@@ -1,7 +1,6 @@
 mod input;
 mod part1;
 mod part2;
-mod states;
 
 use bevy::{
     app::Update,
@@ -15,9 +14,13 @@ use bevy::{
     ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
-use crate::{loader::RawInput, scenes::states::States as SceneStates};
+use crate::{loader::RawInput, scenes::states::Scene};
 
-use super::{resources::GenericDay, state_button_interactions};
+use super::{
+    resources::GenericDay,
+    state_button_interactions,
+    states::{InputState, Part, VisualizationState},
+};
 
 use self::input::Input;
 
@@ -27,16 +30,13 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins((part1::Plugin, part2::Plugin));
 
-        app.add_sub_state::<states::States>()
-            .add_sub_state::<states::InputState>()
-            .add_sub_state::<states::UiState>()
-            .add_computed_state::<states::VisualizationState>();
+        app.add_computed_state::<VisualizationState<1>>();
 
-        app.add_systems(OnEnter(SceneStates::Day(1)), build_day_1);
-        app.add_systems(OnExit(SceneStates::Day(1)), destroy_day_1);
+        app.add_systems(OnEnter(Scene::Day(1)), build_day_1);
+        app.add_systems(OnExit(Scene::Day(1)), destroy_day_1);
         app.add_systems(
             Update,
-            state_button_interactions::<states::States>.run_if(in_state(SceneStates::Day(1))),
+            state_button_interactions::<Part>.run_if(in_state(Scene::Day(1))),
         );
     }
 }
@@ -75,10 +75,10 @@ fn process_input(
     mut commands: Commands,
     day1_resource: Res<GenericDay>,
     inputs: Res<Assets<RawInput>>,
-    mut next_state: ResMut<NextState<states::InputState>>,
+    mut next_state: ResMut<NextState<InputState>>,
 ) {
     if let Some(input) = inputs.get(day1_resource.input.id()) {
         commands.insert_resource(Input::parse(input));
-        next_state.set(states::InputState::Loaded);
+        next_state.set(InputState::Loaded);
     }
 }

@@ -10,9 +10,10 @@ use bevy::{
     ui::{FlexDirection, Interaction, JustifyContent, Node, UiRect, Val},
 };
 
-use crate::scenes::components::{Disabled, StateChange};
-
-use super::ScenesStates;
+use crate::scenes::{
+    components::{Disabled, SceneChange},
+    states::Scene,
+};
 
 const DISABLED_COLOR: Color = Color::srgb(0.3, 0.3, 0.3);
 const HOVERED_COLOR: Color = Color::srgb(0.7, 1.0, 1.0);
@@ -23,7 +24,7 @@ type ButtonWithChangedInteractionQuery<'a, 'b> = Query<
     (
         &'static Interaction,
         &'static mut TextColor,
-        &'static StateChange,
+        &'static SceneChange,
     ),
     (With<Button>, Without<Disabled>, Changed<Interaction>),
 >;
@@ -33,15 +34,12 @@ pub struct Plugin;
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
-            OnEnter(ScenesStates::MainMenu),
+            OnEnter(Scene::MainMenu),
             (build_ui, update_disabled_text_color)
                 .chain()
                 .after(super::build_main_menu),
         );
-        app.add_systems(
-            Update,
-            button_interaction.run_if(in_state(ScenesStates::MainMenu)),
-        );
+        app.add_systems(Update, button_interaction.run_if(in_state(Scene::MainMenu)));
     }
 }
 
@@ -70,7 +68,7 @@ fn update_disabled_text_color(mut buttons: Query<&mut TextColor, (With<Button>, 
 
 fn button_interaction(
     mut buttons: ButtonWithChangedInteractionQuery,
-    mut next_state: ResMut<NextState<ScenesStates>>,
+    mut next_state: ResMut<NextState<Scene>>,
 ) {
     for (interaction, mut text_color, button_next_state) in buttons.iter_mut() {
         match interaction {
@@ -137,7 +135,7 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                                 ..Default::default()
                             },
                             Button,
-                            StateChange(ScenesStates::Day(i)),
+                            SceneChange(Scene::Day(i)),
                         ));
                     }
                     for i in 4..=10 {
@@ -209,7 +207,7 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                                 ..Default::default()
                             },
                             Button,
-                            StateChange(ScenesStates::Day(i)),
+                            SceneChange(Scene::Day(i)),
                         ));
                     }
                 });

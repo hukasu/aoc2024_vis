@@ -11,7 +11,7 @@ use bevy::{
 use crate::scroll_controls::BUTTON_BACKGROUND_COLOR;
 
 use super::{
-    components::{PartChange, StateChange},
+    components::{PartChange, SceneChange},
     FONT_HANDLE,
 };
 
@@ -87,7 +87,7 @@ fn build_state_buttons(parent: &mut ChildBuilder, part_change: bool) {
             button_node(),
             BackgroundColor(BUTTON_BACKGROUND_COLOR),
             Button,
-            StateChange(super::states::States::MainMenu),
+            SceneChange(super::states::Scene::MainMenu),
         ))
         .with_child((
             Text::new("Exit"),

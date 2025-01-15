@@ -1,7 +1,6 @@
 mod components;
 mod input;
 mod resources;
-mod states;
 
 use bevy::{
     app::Update,
@@ -27,14 +26,15 @@ use resources::Hovered;
 
 use crate::{
     loader::RawInput,
-    scenes::states::States as SceneStates,
+    scenes::states::Scene as SceneStates,
     scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
 };
 
 use super::{
-    components::StateChange,
+    components::SceneChange,
     days::{build_content, build_footer, build_header},
     resources::GenericDay,
+    states::{InputState, UiState, VisualizationState},
 };
 
 const PIXEL_PER_UNIT: u32 = 1;
@@ -45,40 +45,38 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_sub_state::<states::InputState>()
-            .add_sub_state::<states::UiState>()
-            .add_computed_state::<states::VisualizationState>();
+        app.add_computed_state::<VisualizationState<25>>();
 
         app.add_systems(OnEnter(SceneStates::Day(25)), build_day_25)
             .add_systems(OnExit(SceneStates::Day(25)), destroy_day_25)
             .add_systems(
                 Update,
-                process_input.run_if(in_state(states::VisualizationState::WaitingInput)),
+                process_input.run_if(in_state(VisualizationState::<25>::WaitingInput)),
             )
             .add_systems(
                 Update,
-                build_ui.run_if(in_state(states::VisualizationState::WaitingUi)),
+                build_ui.run_if(in_state(VisualizationState::<25>::WaitingUi)),
             )
             .add_systems(
                 Update,
-                state_button_interactions.run_if(in_state(states::VisualizationState::Ready)),
+                state_button_interactions.run_if(in_state(VisualizationState::<25>::Ready)),
             )
             .add_systems(
                 Update,
-                check_hovered.run_if(in_state(states::VisualizationState::Ready)),
+                check_hovered.run_if(in_state(VisualizationState::<25>::Ready)),
             )
             .add_systems(
                 Update,
                 update_keys_and_locks
                     .after(check_hovered)
-                    .run_if(in_state(states::VisualizationState::Ready))
+                    .run_if(in_state(VisualizationState::<25>::Ready))
                     .run_if(resource_exists::<Hovered>),
             )
             .add_systems(
                 Update,
                 (clear_locks, clear_keys)
                     .after(check_hovered)
-                    .run_if(in_state(states::VisualizationState::Ready))
+                    .run_if(in_state(VisualizationState::<25>::Ready))
                     .run_if(resource_removed::<Hovered>),
             );
     }
@@ -220,7 +218,7 @@ fn destroy_day_25(mut commands: Commands, day25_resource: Res<GenericDay>) {
 
 fn state_button_interactions(
     mut buttons: ButtonWithChangedInteractionQuery,
-    state_changes: Query<&StateChange>,
+    state_changes: Query<&SceneChange>,
     mut next_state: ResMut<NextState<SceneStates>>,
 ) {
     for (button, mut background_color, interaction) in buttons.iter_mut() {
@@ -240,11 +238,11 @@ fn process_input(
     mut commands: Commands,
     day25: Res<GenericDay>,
     inputs: Res<Assets<RawInput>>,
-    mut next_state: ResMut<NextState<states::InputState>>,
+    mut next_state: ResMut<NextState<InputState>>,
 ) {
     if let Some(input) = inputs.get(day25.input.id()) {
         commands.insert_resource(input::Input::parse(input));
-        next_state.set(states::InputState::Loaded);
+        next_state.set(InputState::Loaded);
     }
 }
 
@@ -253,7 +251,7 @@ fn build_ui(
     day25_resource: Res<GenericDay>,
     input: Res<input::Input>,
     mut images: ResMut<Assets<Image>>,
-    mut next_state: ResMut<NextState<states::UiState>>,
+    mut next_state: ResMut<NextState<UiState>>,
 ) {
     let header = build_header(&mut commands, "day25", false);
     let content = build_content(&mut commands, "day25");
@@ -266,7 +264,7 @@ fn build_ui(
         .entity(day25_resource.ui)
         .add_children(&[header, content, footer]);
 
-    next_state.set(states::UiState::Loaded);
+    next_state.set(UiState::Loaded);
 }
 
 fn build_visualization(

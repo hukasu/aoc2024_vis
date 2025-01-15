@@ -7,7 +7,7 @@ use bevy::{
     prelude::{Camera2d, ClearColor, Commands, DespawnRecursiveExt, OnEnter, OnExit, Res},
 };
 
-use crate::scenes::states::States as ScenesStates;
+use crate::scenes::states::Scene;
 
 pub struct Plugin;
 
@@ -15,8 +15,8 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins(ui::Plugin);
 
-        app.add_systems(OnEnter(ScenesStates::MainMenu), build_main_menu);
-        app.add_systems(OnExit(ScenesStates::MainMenu), destroy_main_menu);
+        app.add_systems(OnEnter(Scene::MainMenu), build_main_menu);
+        app.add_systems(OnExit(Scene::MainMenu), destroy_main_menu);
     }
 }
 

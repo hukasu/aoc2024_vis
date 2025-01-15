@@ -1,7 +1,6 @@
 mod input;
 mod part1;
 mod part2;
-mod states;
 
 use bevy::{
     app::Update,
@@ -19,7 +18,11 @@ use crate::loader::RawInput;
 
 use input::Input;
 
-use super::{resources::GenericDay, state_button_interactions};
+use super::{
+    resources::GenericDay,
+    state_button_interactions,
+    states::{InputState, Part, VisualizationState},
+};
 
 pub struct Plugin;
 
@@ -27,21 +30,17 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins((part1::Plugin, part2::Plugin));
 
-        app.add_sub_state::<states::States>()
-            .add_sub_state::<states::InputState>()
-            .add_sub_state::<states::UiState>()
-            .add_computed_state::<states::VisualizationState>();
+        app.add_computed_state::<VisualizationState<3>>();
 
-        app.add_systems(OnEnter(super::states::States::Day(3)), build_day_3)
-            .add_systems(OnExit(super::states::States::Day(3)), destroy_day_3)
+        app.add_systems(OnEnter(super::states::Scene::Day(3)), build_day_3)
+            .add_systems(OnExit(super::states::Scene::Day(3)), destroy_day_3)
             .add_systems(
                 Update,
-                process_input.run_if(in_state(states::VisualizationState::WaitingInput)),
+                process_input.run_if(in_state(VisualizationState::<3>::WaitingInput)),
             )
             .add_systems(
                 Update,
-                state_button_interactions::<states::States>
-                    .run_if(in_state(super::states::States::Day(3))),
+                state_button_interactions::<Part>.run_if(in_state(super::states::Scene::Day(3))),
             );
     }
 }
@@ -80,10 +79,10 @@ fn process_input(
     mut commands: Commands,
     day3_resource: Res<GenericDay>,
     inputs: Res<Assets<RawInput>>,
-    mut next_state: ResMut<NextState<states::InputState>>,
+    mut next_state: ResMut<NextState<InputState>>,
 ) {
     if let Some(input) = inputs.get(day3_resource.input.id()) {
         commands.insert_resource(Input::parse(input));
-        next_state.set(states::InputState::Loaded);
+        next_state.set(InputState::Loaded);
     }
 }

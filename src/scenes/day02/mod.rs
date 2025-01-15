@@ -1,5 +1,4 @@
 mod input;
-mod states;
 mod ui;
 
 use bevy::{
@@ -22,7 +21,11 @@ use crate::{
 
 use input::Input;
 
-use super::{components::StateChange, resources::GenericDay};
+use super::{
+    components::SceneChange,
+    resources::GenericDay,
+    states::{InputState, Scene, VisualizationState},
+};
 
 pub struct Plugin;
 
@@ -30,19 +33,17 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins(ui::Plugin);
 
-        app.add_sub_state::<states::InputState>()
-            .add_sub_state::<states::UiState>()
-            .add_computed_state::<states::VisualizationState>();
+        app.add_computed_state::<VisualizationState<2>>();
 
-        app.add_systems(OnEnter(super::states::States::Day(2)), build_day_2)
-            .add_systems(OnExit(super::states::States::Day(2)), destroy_day_2)
+        app.add_systems(OnEnter(Scene::Day(2)), build_day_2)
+            .add_systems(OnExit(Scene::Day(2)), destroy_day_2)
             .add_systems(
                 Update,
-                process_input.run_if(in_state(states::VisualizationState::WaitingInput)),
+                process_input.run_if(in_state(VisualizationState::<2>::WaitingInput)),
             )
             .add_systems(
                 Update,
-                state_button_interactions.run_if(in_state(super::states::States::Day(2))),
+                state_button_interactions.run_if(in_state(Scene::Day(2))),
             );
     }
 }
@@ -81,11 +82,11 @@ fn process_input(
     mut commands: Commands,
     day2_resource: Res<GenericDay>,
     inputs: Res<Assets<RawInput>>,
-    mut next_state: ResMut<NextState<states::InputState>>,
+    mut next_state: ResMut<NextState<InputState>>,
 ) {
     if let Some(input) = inputs.get(day2_resource.input.id()) {
         commands.insert_resource(Input::parse(input));
-        next_state.set(states::InputState::Loaded);
+        next_state.set(InputState::Loaded);
     }
 }
 
@@ -98,8 +99,8 @@ type ButtonWithChangedInteractionQuery<'a, 'b> = Query<
 
 fn state_button_interactions(
     mut buttons: ButtonWithChangedInteractionQuery,
-    state_changes: Query<&StateChange>,
-    mut next_state: ResMut<NextState<super::states::States>>,
+    state_changes: Query<&SceneChange>,
+    mut next_state: ResMut<NextState<Scene>>,
 ) {
     for (button, mut background_color, interaction) in buttons.iter_mut() {
         match interaction {

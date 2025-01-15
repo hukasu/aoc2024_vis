@@ -17,7 +17,7 @@ use bevy::{
     ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
-use crate::{loader::RawInput, scenes::states::States as SceneStates};
+use crate::{loader::RawInput, scenes::states::Scene};
 
 use super::{resources::GenericDay, state_button_interactions};
 
@@ -31,11 +31,11 @@ impl bevy::app::Plugin for Plugin {
 
         app.add_sub_state::<states::States>();
 
-        app.add_systems(OnEnter(SceneStates::Day(24)), build_day_24);
-        app.add_systems(OnExit(SceneStates::Day(24)), destroy_day_24);
+        app.add_systems(OnEnter(Scene::Day(24)), build_day_24);
+        app.add_systems(OnExit(Scene::Day(24)), destroy_day_24);
         app.add_systems(
             Update,
-            state_button_interactions::<states::States>.run_if(in_state(SceneStates::Day(24))),
+            state_button_interactions::<states::States>.run_if(in_state(Scene::Day(24))),
         );
     }
 }

@@ -16,15 +16,13 @@ use crate::{
     scenes::{
         days::{build_content, build_header},
         resources::GenericDay,
+        states::{UiState, VisualizationState},
         FONT_SYMBOLS_HANDLE,
     },
     scroll_controls::{ScrollControl, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
 
-use super::{
-    input::{self, Safety},
-    states,
-};
+use super::input;
 
 const SCROLL_SPEED: f32 = 512.;
 
@@ -34,7 +32,7 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
             Update,
-            build_ui.run_if(in_state(states::VisualizationState::WaitingUi)),
+            build_ui.run_if(in_state(VisualizationState::<2>::WaitingUi)),
         );
     }
 }
@@ -43,7 +41,7 @@ fn build_ui(
     mut commands: Commands,
     day2_resource: Res<GenericDay>,
     input: Res<input::Input>,
-    mut next_state: ResMut<NextState<states::UiState>>,
+    mut next_state: ResMut<NextState<UiState>>,
 ) {
     bevy::log::trace!("Day 2");
     let header = build_header(&mut commands, "day2", false);
@@ -57,19 +55,24 @@ fn build_ui(
         .entity(day2_resource.ui)
         .add_children(&[header, content]);
 
-    next_state.set(states::UiState::Loaded);
+    next_state.set(UiState::Loaded);
 }
 
 fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
     let safe = input
         .reports
         .iter()
-        .filter(|report| matches!(report.safety, Safety::Safe))
+        .filter(|report| matches!(report.safety, input::Safety::Safe))
         .count();
     let kinda_safe = input
         .reports
         .iter()
-        .filter(|report| matches!(report.safety, Safety::Safe | Safety::OneError(_)))
+        .filter(|report| {
+            matches!(
+                report.safety,
+                input::Safety::Safe | input::Safety::OneError(_)
+            )
+        })
         .count();
 
     parent
@@ -145,9 +148,9 @@ fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
                         .with_children(|parent| {
                             for report in &input.reports {
                                 let border_color = match report.safety {
-                                    Safety::Safe => palettes::basic::GREEN,
-                                    Safety::OneError(_) => palettes::basic::YELLOW,
-                                    Safety::Unsafe => palettes::basic::RED,
+                                    input::Safety::Safe => palettes::basic::GREEN,
+                                    input::Safety::OneError(_) => palettes::basic::YELLOW,
+                                    input::Safety::Unsafe => palettes::basic::RED,
                                 };
                                 parent
                                     .spawn((
@@ -163,7 +166,7 @@ fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
                                     ))
                                     .with_children(|parent| {
                                         let unsafe_val =
-                                            if let Safety::OneError(err) = report.safety {
+                                            if let input::Safety::OneError(err) = report.safety {
                                                 err
                                             } else {
                                                 usize::MAX

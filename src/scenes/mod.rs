@@ -19,7 +19,7 @@ use bevy::{
     text::Font,
     ui::{BackgroundColor, Interaction},
 };
-use components::{PartChange, StateChange};
+use components::{PartChange, SceneChange};
 
 use crate::scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR};
 
@@ -47,7 +47,10 @@ impl bevy::app::Plugin for Plugin {
             day25::Plugin,
         ));
 
-        app.init_state::<states::States>();
+        app.init_state::<states::Scene>()
+            .add_sub_state::<states::Part>()
+            .add_sub_state::<states::InputState>()
+            .add_sub_state::<states::UiState>();
 
         app.add_systems(Startup, load_font);
     }
@@ -76,9 +79,9 @@ fn load_font(asset_server: Res<AssetServer>) {
 
 fn state_button_interactions<T>(
     mut buttons: ButtonWithChangedInteractionQuery,
-    state_changes: Query<&StateChange>,
+    state_changes: Query<&SceneChange>,
     part_changes: Query<&PartChange>,
-    mut next_state: ResMut<NextState<states::States>>,
+    mut next_state: ResMut<NextState<states::Scene>>,
     mut part_next_state: ResMut<NextState<T>>,
 ) where
     T: FreelyMutableState + From<PartChange>,

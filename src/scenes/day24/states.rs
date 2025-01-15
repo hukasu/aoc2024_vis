@@ -1,9 +1,9 @@
 use bevy::prelude::StateSet;
 
-use crate::scenes::{components::PartChange, states::States as SceneStates};
+use crate::scenes::{components::PartChange, states::Scene};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, bevy::prelude::SubStates)]
-#[source(SceneStates = SceneStates::Day(24))]
+#[source(Scene = Scene::Day(24))]
 pub enum States {
     #[default]
     Part1,
