@@ -2,7 +2,7 @@ use std::io::BufRead;
 
 use bevy::prelude::Resource;
 
-use crate::loader::Input as InputAsset;
+use crate::loader::RawInput;
 
 #[derive(Debug, Resource)]
 pub struct Input {
@@ -11,7 +11,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn parse(input: &InputAsset) -> Self {
+    pub fn parse(input: &RawInput) -> Self {
         let mut left = Vec::new();
         let mut right = Vec::new();
 

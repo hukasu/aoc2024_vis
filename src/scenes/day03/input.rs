@@ -1,5 +1,7 @@
 use bevy::prelude::Resource;
 
+use crate::loader::RawInput;
+
 #[derive(Debug, Resource)]
 pub struct Input {
     pub input: String,
@@ -15,7 +17,7 @@ pub struct Segment {
 }
 
 impl Input {
-    pub fn parse(input: &crate::loader::Input) -> Self {
+    pub fn parse(input: &RawInput) -> Self {
         let input_data = String::from_utf8(input.0.clone()).unwrap();
         let segments = Self::collect_all_mul(&input_data, false);
         Self {

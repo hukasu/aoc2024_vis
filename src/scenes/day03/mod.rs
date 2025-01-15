@@ -16,7 +16,7 @@ use bevy::{
     ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
-use crate::loader::Input as InputAsset;
+use crate::loader::RawInput;
 
 use input::Input;
 
@@ -80,7 +80,7 @@ fn destroy_day_3(mut commands: Commands, day3_resource: Res<resources::Day03>) {
 fn process_input(
     mut commands: Commands,
     day3_resource: Res<resources::Day03>,
-    inputs: Res<Assets<InputAsset>>,
+    inputs: Res<Assets<RawInput>>,
     mut next_state: ResMut<NextState<states::InputState>>,
 ) {
     if let Some(input) = inputs.get(day3_resource.input.id()) {

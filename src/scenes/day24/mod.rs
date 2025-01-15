@@ -17,7 +17,7 @@ use bevy::{
     ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
-use crate::{loader::Input as InputAsset, scenes::states::States as SceneStates};
+use crate::{loader::RawInput, scenes::states::States as SceneStates};
 
 use super::state_button_interactions;
 
@@ -70,7 +70,7 @@ fn destroy_day_24(mut commands: Commands, day24_resource: Res<resources::Day24>)
     commands.remove_resource::<resources::Day24>();
 }
 
-fn process_input(mut commands: Commands, day24: Res<Day24>, inputs: Res<Assets<InputAsset>>) {
+fn process_input(mut commands: Commands, day24: Res<Day24>, inputs: Res<Assets<RawInput>>) {
     if let Some(input) = inputs.get(day24.input.id()) {
         commands.insert_resource(Input::parse(input));
     }

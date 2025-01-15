@@ -3,11 +3,11 @@ use bevy::{
     prelude::{Entity, Resource},
 };
 
-use crate::loader::Input as InputAsset;
+use crate::loader::RawInput;
 
 #[derive(Debug, Resource)]
 pub struct Day01 {
-    pub input: Handle<InputAsset>,
+    pub input: Handle<RawInput>,
     pub camera: Entity,
     pub ui: Entity,
 }

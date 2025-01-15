@@ -1,12 +1,12 @@
 use bevy::{asset::Asset, prelude::Deref, reflect::Reflect};
 
 #[derive(Asset, Reflect, Deref)]
-pub struct Input(pub Vec<u8>);
+pub struct RawInput(pub Vec<u8>);
 
 pub struct AssetLoader;
 
 impl bevy::asset::AssetLoader for AssetLoader {
-    type Asset = Input;
+    type Asset = RawInput;
     type Settings = ();
     type Error = std::io::Error;
 
@@ -19,7 +19,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
         let mut data = Vec::new();
         reader.read_to_end(&mut data).await?;
 
-        Ok(Input(data))
+        Ok(RawInput(data))
     }
 
     fn extensions(&self) -> &[&str] {

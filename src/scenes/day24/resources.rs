@@ -5,13 +5,13 @@ use bevy::{
     prelude::{Entity, Resource},
 };
 
-use crate::loader::Input as InputAsset;
+use crate::loader::RawInput;
 
 use super::operation::{Operation, Operator};
 
 #[derive(Debug, Resource)]
 pub struct Day24 {
-    pub input: Handle<InputAsset>,
+    pub input: Handle<RawInput>,
     pub camera: Entity,
     pub ui: Entity,
 }
@@ -28,7 +28,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn parse(input: &InputAsset) -> Self {
+    pub fn parse(input: &RawInput) -> Self {
         let mut lines = input.split(|c| *c == b'\n');
 
         let mut input = Input::default();

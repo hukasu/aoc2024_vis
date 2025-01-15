@@ -26,7 +26,7 @@ use components::{usable_key_on_lock, Key, Lock};
 use resources::Hovered;
 
 use crate::{
-    loader::Input as InputAsset,
+    loader::RawInput,
     scenes::states::States as SceneStates,
     scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
 };
@@ -238,7 +238,7 @@ fn state_button_interactions(
 fn process_input(
     mut commands: Commands,
     day25: Res<resources::Day25>,
-    inputs: Res<Assets<InputAsset>>,
+    inputs: Res<Assets<RawInput>>,
     mut next_state: ResMut<NextState<states::InputState>>,
 ) {
     if let Some(input) = inputs.get(day25.input.id()) {

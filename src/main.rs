@@ -20,8 +20,8 @@ fn main() {
     app.add_plugins((RemotePlugin::default(), RemoteHttpPlugin::default()));
 
     app.register_asset_loader(loader::AssetLoader)
-        .init_asset::<loader::Input>()
-        .register_type::<loader::Input>();
+        .init_asset::<loader::RawInput>()
+        .register_type::<loader::RawInput>();
 
     let mut gizmos_config_store = app
         .world_mut()

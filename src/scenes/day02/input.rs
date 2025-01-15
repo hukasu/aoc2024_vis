@@ -2,7 +2,7 @@ use std::{cmp::Ordering, io::BufRead};
 
 use bevy::prelude::Resource;
 
-use crate::loader::Input as InputAsset;
+use crate::loader::RawInput;
 
 #[derive(Debug, Resource)]
 pub struct Input {
@@ -32,7 +32,7 @@ struct SafetyTest {
 }
 
 impl Input {
-    pub fn parse(input: &InputAsset) -> Self {
+    pub fn parse(input: &RawInput) -> Self {
         let mut reports = Vec::new();
 
         for line in input.lines() {

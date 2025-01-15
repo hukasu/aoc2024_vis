@@ -1,6 +1,6 @@
 use bevy::prelude::Resource;
 
-use crate::loader::Input as InputAsset;
+use crate::loader::RawInput;
 
 use super::components::{Key, Lock};
 
@@ -11,7 +11,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn parse(input: &InputAsset) -> Self {
+    pub fn parse(input: &RawInput) -> Self {
         let lines = input.split(|c| *c == b'\n');
 
         let mut keys = Vec::new();

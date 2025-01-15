@@ -17,7 +17,7 @@ use bevy::{
 };
 
 use crate::{
-    loader::Input as InputAsset,
+    loader::RawInput,
     scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
 };
 
@@ -81,7 +81,7 @@ fn destroy_day_2(mut commands: Commands, day2_resource: Res<resources::Day02>) {
 fn process_input(
     mut commands: Commands,
     day2_resource: Res<resources::Day02>,
-    inputs: Res<Assets<InputAsset>>,
+    inputs: Res<Assets<RawInput>>,
     mut next_state: ResMut<NextState<states::InputState>>,
 ) {
     if let Some(input) = inputs.get(day2_resource.input.id()) {
