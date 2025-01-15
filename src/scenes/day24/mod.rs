@@ -3,7 +3,6 @@ mod input;
 mod operation;
 mod part1;
 mod part2;
-mod states;
 
 use bevy::{
     app::Update,
@@ -12,14 +11,18 @@ use bevy::{
     core::Name,
     prelude::{
         in_state, AppExtStates, Camera2d, ClearColor, Commands, DespawnRecursiveExt,
-        IntoSystemConfigs, OnEnter, OnExit, Res,
+        IntoSystemConfigs, NextState, OnEnter, OnExit, Res, ResMut,
     },
     ui::{FlexDirection, Node, TargetCamera, Val},
 };
 
 use crate::{loader::RawInput, scenes::states::Scene};
 
-use super::{resources::GenericDay, state_button_interactions};
+use super::{
+    resources::GenericDay,
+    state_button_interactions,
+    states::{InputState, Part, VisualizationState},
+};
 
 use self::input::Input;
 
@@ -29,14 +32,18 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins((part1::Plugin, part2::Plugin));
 
-        app.add_sub_state::<states::States>();
+        app.add_computed_state::<VisualizationState<24>>();
 
-        app.add_systems(OnEnter(Scene::Day(24)), build_day_24);
-        app.add_systems(OnExit(Scene::Day(24)), destroy_day_24);
-        app.add_systems(
-            Update,
-            state_button_interactions::<states::States>.run_if(in_state(Scene::Day(24))),
-        );
+        app.add_systems(OnEnter(Scene::Day(24)), build_day_24)
+            .add_systems(OnExit(Scene::Day(24)), destroy_day_24)
+            .add_systems(
+                Update,
+                state_button_interactions::<Part>.run_if(in_state(Scene::Day(24))),
+            )
+            .add_systems(
+                Update,
+                process_input.run_if(in_state(VisualizationState::<24>::WaitingInput)),
+            );
     }
 }
 
@@ -70,8 +77,14 @@ fn destroy_day_24(mut commands: Commands, day24_resource: Res<GenericDay>) {
     commands.remove_resource::<GenericDay>();
 }
 
-fn process_input(mut commands: Commands, day24: Res<GenericDay>, inputs: Res<Assets<RawInput>>) {
+fn process_input(
+    mut commands: Commands,
+    day24: Res<GenericDay>,
+    inputs: Res<Assets<RawInput>>,
+    mut next_state: ResMut<NextState<InputState>>,
+) {
     if let Some(input) = inputs.get(day24.input.id()) {
         commands.insert_resource(Input::parse(input));
+        next_state.set(InputState::Loaded);
     }
 }

@@ -1,16 +1,16 @@
 use std::collections::BTreeMap;
 
 use bevy::{
-    app::{PreUpdate, Update},
+    app::Update,
     asset::{AssetServer, Handle},
     color::{palettes, Color},
     core::Name,
     image::Image,
     math::{UVec2, Vec2, Vec3},
     prelude::{
-        in_state, not, resource_added, resource_exists, BuildChildren, Camera, Camera2d,
-        ChildBuild, ChildBuilder, Commands, DespawnRecursiveExt, Entity, Gizmos, GlobalTransform,
-        ImageNode, IntoSystemConfigs, OnEnter, OnExit, Query, Res, Single, Text, With, Without,
+        in_state, BuildChildren, Camera, Camera2d, ChildBuild, ChildBuilder, Commands,
+        DespawnRecursiveExt, Entity, Gizmos, GlobalTransform, ImageNode, IntoSystemConfigs,
+        NextState, OnEnter, OnExit, Query, Res, ResMut, Single, Text, With, Without,
     },
     render::view::RenderLayers,
     sprite::{TextureAtlas, TextureAtlasLayout},
@@ -27,6 +27,7 @@ use crate::{
         day24::{components::Gate, operation::Operator},
         days::{build_content, build_header, button_node},
         resources::GenericDay,
+        states::{InputState, Part, UiState, VisualizationState},
         BUTTON_BACKGROUND_COLOR, FONT_SYMBOLS_2_HANDLE,
     },
     scroll_controls::{ScrollControl, ScrollWindow},
@@ -35,7 +36,6 @@ use crate::{
 use super::{
     components::{Adder, GizmosCamera},
     input::Input,
-    states::States,
 };
 
 const SCROLL_SPEED: f32 = 512.;
@@ -48,27 +48,23 @@ pub struct Plugin;
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
-            PreUpdate,
-            build_ui
-                .run_if(in_state(States::Part2))
-                .run_if(resource_added::<Input>),
-        )
-        .add_systems(OnExit(States::Part2), destroy_ui)
-        .add_systems(
             Update,
-            super::process_input
-                .run_if(not(resource_exists::<Input>))
-                .run_if(in_state(States::Part2)),
+            build_ui
+                .run_if(in_state(Part::Part2))
+                .run_if(in_state(VisualizationState::<24>::WaitingUi)),
+        )
+        .add_systems(
+            OnExit(Part::Part2),
+            destroy_ui.before(super::destroy_day_24),
         )
         .add_systems(
             Update,
             draw_connections
-                .run_if(in_state(States::Part2))
-                .run_if(resource_exists::<Input>)
-                .chain(),
+                .run_if(in_state(Part::Part2))
+                .run_if(in_state(VisualizationState::<24>::Ready)),
         )
-        .add_systems(OnEnter(States::Part2), spawn_gizmos_camera)
-        .add_systems(OnExit(States::Part2), despawn_gizmos_camera);
+        .add_systems(OnEnter(Part::Part2), spawn_gizmos_camera)
+        .add_systems(OnExit(Part::Part2), despawn_gizmos_camera);
     }
 }
 
@@ -119,6 +115,7 @@ fn build_ui(
     day24_resource: Res<GenericDay>,
     input: Res<Input>,
     asset_server: Res<AssetServer>,
+    mut ui_state: ResMut<NextState<UiState>>,
 ) {
     bevy::log::trace!("Day 24 Part 2");
 
@@ -141,11 +138,21 @@ fn build_ui(
     commands
         .entity(day24_resource.ui)
         .add_children(&[header, content]);
+
+    ui_state.set(UiState::Loaded);
 }
 
-fn destroy_ui(mut commands: Commands, day24_resource: Res<GenericDay>) {
+fn destroy_ui(
+    mut commands: Commands,
+    day24_resource: Res<GenericDay>,
+    mut input_state: ResMut<NextState<InputState>>,
+    mut ui_state: ResMut<NextState<UiState>>,
+) {
     commands.remove_resource::<Input>();
     commands.entity(day24_resource.ui).despawn_descendants();
+
+    input_state.set(InputState::NotLoaded);
+    ui_state.set(UiState::NotLoaded);
 }
 
 fn spawn_gizmos_camera(mut commands: Commands) {

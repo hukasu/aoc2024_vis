@@ -6,8 +6,8 @@ use bevy::{
     color::{palettes, Color},
     core::Name,
     prelude::{
-        in_state, not, resource_added, resource_exists, BuildChildren, Button, Changed, ChildBuild,
-        ChildBuilder, Commands, DespawnRecursiveExt, IntoSystemConfigs, OnExit, Query, Res, ResMut,
+        in_state, resource_exists, BuildChildren, Button, Changed, ChildBuild, ChildBuilder,
+        Commands, DespawnRecursiveExt, IntoSystemConfigs, NextState, OnExit, Query, Res, ResMut,
         Text, With,
     },
     text::{Font, TextColor, TextFont},
@@ -20,6 +20,7 @@ use bevy::{
 use crate::scenes::{
     days::{build_content, build_footer, build_header, button_node},
     resources::GenericDay,
+    states::{InputState, Part, UiState, VisualizationState},
     BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, FONT_HANDLE, FONT_SYMBOLS_2_HANDLE,
     FONT_SYMBOLS_HANDLE,
 };
@@ -27,7 +28,6 @@ use crate::scenes::{
 use super::{
     components::{Controls, Wire},
     input::{ExecutionResult, Input},
-    states::States,
 };
 
 pub struct Plugin;
@@ -37,23 +37,21 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(
             Update,
             build_ui
-                .run_if(in_state(States::Part1))
-                .run_if(resource_added::<Input>),
+                .run_if(in_state(Part::Part1))
+                .run_if(in_state(VisualizationState::<24>::WaitingUi)),
         )
         .add_systems(
-            OnExit(States::Part1),
+            OnExit(Part::Part1),
             destroy_ui.before(super::destroy_day_24),
         )
         .add_systems(
             Update,
-            super::process_input
-                .run_if(in_state(States::Part1))
-                .run_if(not(resource_exists::<Input>)),
-        )
-        .add_systems(
-            Update,
             controls_interaction
-                .run_if(in_state(States::Part1))
+                .run_if(in_state(Part::Part1))
+                .run_if(in_state(VisualizationState::<24>::Ready))
+                // For some reason it is taking some time for the VisualizationState
+                // to update and on the frame that changes from Part2 to Part1 it still
+                // has the value of Ready, even though Input does not exists
                 .run_if(resource_exists::<Input>),
         );
     }
@@ -75,6 +73,8 @@ fn controls_interaction(
     mut controls: ControlWithChangedInteractionQuery,
     day24: Res<GenericDay>,
     mut input: ResMut<Input>,
+    mut input_state: ResMut<NextState<InputState>>,
+    mut ui_state: ResMut<NextState<UiState>>,
 ) {
     for (mut background_color, interaction, control) in controls.iter_mut() {
         match interaction {
@@ -84,6 +84,9 @@ fn controls_interaction(
                 Controls::Reset => {
                     commands.remove_resource::<Input>();
                     commands.entity(day24.ui).despawn_descendants();
+
+                    input_state.set(InputState::NotLoaded);
+                    ui_state.set(UiState::NotLoaded);
                 }
                 Controls::Step => {
                     let res = if !input.operations.is_empty() {
@@ -105,9 +108,15 @@ fn controls_interaction(
     }
 }
 
-fn build_ui(mut commands: Commands, day24_resource: Res<GenericDay>, input: Res<Input>) {
+fn build_ui(
+    mut commands: Commands,
+    day24_resource: Res<GenericDay>,
+    input: Res<Input>,
+    mut next_state: ResMut<NextState<UiState>>,
+) {
     bevy::log::trace!("Day 24 Part 1");
     build_part1_ui(&mut commands, &day24_resource, &input, None);
+    next_state.set(UiState::Loaded);
 }
 
 fn build_part1_ui(
@@ -130,9 +139,17 @@ fn build_part1_ui(
         .add_children(&[header, content, footer]);
 }
 
-fn destroy_ui(mut commands: Commands, day24_resource: Res<GenericDay>) {
+fn destroy_ui(
+    mut commands: Commands,
+    day24_resource: Res<GenericDay>,
+    mut input_state: ResMut<NextState<InputState>>,
+    mut ui_state: ResMut<NextState<UiState>>,
+) {
     commands.remove_resource::<Input>();
     commands.entity(day24_resource.ui).despawn_descendants();
+
+    input_state.set(InputState::NotLoaded);
+    ui_state.set(UiState::NotLoaded);
 }
 
 fn build_visualization(
