@@ -4,6 +4,7 @@ mod day02;
 mod day03;
 mod day04;
 mod day05;
+mod day06;
 mod day24;
 mod day25;
 mod days;
@@ -47,6 +48,7 @@ impl bevy::app::Plugin for Plugin {
             day03::Plugin,
             day04::Plugin,
             day05::Plugin,
+            day06::Plugin,
             day24::Plugin,
             day25::Plugin,
         ));
