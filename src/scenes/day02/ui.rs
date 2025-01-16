@@ -5,11 +5,8 @@ use bevy::{
         in_state, BuildChildren, ChildBuild, ChildBuilder, Commands, IntoSystemConfigs, NextState,
         Res, ResMut, Text,
     },
-    text::{TextColor, TextFont},
-    ui::{
-        BackgroundColor, BorderColor, BorderRadius, FlexDirection, JustifyContent, Node, Overflow,
-        PositionType, UiRect, Val,
-    },
+    text::TextColor,
+    ui::{BorderColor, BorderRadius, FlexDirection, Node, Overflow, PositionType, UiRect, Val},
 };
 
 use crate::{
@@ -19,7 +16,7 @@ use crate::{
         states::{UiState, VisualizationState},
         FONT_SYMBOLS_HANDLE,
     },
-    scroll_controls::{ScrollControl, ScrollWindow, BUTTON_BACKGROUND_COLOR},
+    scroll_controls::{ui::build_vertical_scroll_buttons, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
 
 use super::input;
@@ -187,63 +184,13 @@ fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
                         })
                         .id();
 
-                    parent
-                        .spawn((Node {
-                            bottom: Val::Px(1.),
-                            right: Val::Px(1.),
-                            position_type: PositionType::Absolute,
-                            flex_direction: FlexDirection::Column,
-                            row_gap: Val::Px(5.),
-                            ..Default::default()
-                        },))
-                        .with_children(|parent| {
-                            parent
-                                .spawn((
-                                    Node {
-                                        width: Val::Px(25.),
-                                        height: Val::Px(25.),
-                                        justify_content: JustifyContent::Center,
-                                        ..Default::default()
-                                    },
-                                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
-                                    ScrollControl {
-                                        horizontal: 0.,
-                                        vertical: -SCROLL_SPEED,
-                                        target: window,
-                                    },
-                                ))
-                                .with_child((
-                                    Text::new("↑"),
-                                    TextColor::BLACK,
-                                    TextFont {
-                                        font: FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
-                                        ..Default::default()
-                                    },
-                                ));
-                            parent
-                                .spawn((
-                                    Node {
-                                        width: Val::Px(25.),
-                                        height: Val::Px(25.),
-                                        justify_content: JustifyContent::Center,
-                                        ..Default::default()
-                                    },
-                                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
-                                    ScrollControl {
-                                        horizontal: 0.,
-                                        vertical: SCROLL_SPEED,
-                                        target: window,
-                                    },
-                                ))
-                                .with_child((
-                                    Text::new("↓"),
-                                    TextColor::BLACK,
-                                    TextFont {
-                                        font: FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
-                                        ..Default::default()
-                                    },
-                                ));
-                        });
+                    build_vertical_scroll_buttons(
+                        parent,
+                        window,
+                        SCROLL_SPEED,
+                        BUTTON_BACKGROUND_COLOR,
+                        FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
+                    );
                 });
         });
 }

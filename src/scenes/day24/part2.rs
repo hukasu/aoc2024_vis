@@ -14,7 +14,7 @@ use bevy::{
     },
     render::view::RenderLayers,
     sprite::{TextureAtlas, TextureAtlasLayout},
-    text::{TextColor, TextFont},
+    text::TextColor,
     ui::{
         AlignContent, BackgroundColor, FlexDirection, JustifyContent, Node, Overflow, PositionType,
         Val,
@@ -25,12 +25,12 @@ use bevy::{
 use crate::{
     scenes::{
         day24::{components::Gate, operation::Operator},
-        days::{build_content, build_header, button_node},
+        days::{build_content, build_header},
         resources::GenericDay,
         states::{InputState, Part, UiState, VisualizationState},
         BUTTON_BACKGROUND_COLOR, FONT_SYMBOLS_2_HANDLE,
     },
-    scroll_controls::{ScrollControl, ScrollWindow},
+    scroll_controls::{ui::build_horizontal_scroll_buttons, ScrollWindow},
 };
 
 use super::{
@@ -699,58 +699,12 @@ fn build_visualization(
                 })
                 .id();
 
-            build_control_buttons(parent, window);
-        });
-}
-
-fn build_control_buttons(parent: &mut ChildBuilder, window: Entity) {
-    let font = FONT_SYMBOLS_2_HANDLE
-        .get()
-        .expect("Font should be initialized.");
-    parent
-        .spawn(Node {
-            bottom: Val::Px(5.),
-            left: Val::Px(5.),
-            position_type: PositionType::Absolute,
-            flex_direction: FlexDirection::Row,
-            ..Default::default()
-        })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    button_node(),
-                    ScrollControl {
-                        horizontal: -SCROLL_SPEED,
-                        vertical: 0.,
-                        target: window,
-                    },
-                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
-                ))
-                .with_child((
-                    Text::new("⏮"),
-                    TextFont {
-                        font: font.clone(),
-                        ..Default::default()
-                    },
-                    TextColor(Color::BLACK),
-                ));
-            parent
-                .spawn((
-                    button_node(),
-                    ScrollControl {
-                        horizontal: SCROLL_SPEED,
-                        vertical: 0.,
-                        target: window,
-                    },
-                    BackgroundColor(BUTTON_BACKGROUND_COLOR),
-                ))
-                .with_child((
-                    Text::new("⏭"),
-                    TextFont {
-                        font: font.clone(),
-                        ..Default::default()
-                    },
-                    TextColor(Color::BLACK),
-                ));
+            build_horizontal_scroll_buttons(
+                parent,
+                window,
+                SCROLL_SPEED,
+                BUTTON_BACKGROUND_COLOR,
+                FONT_SYMBOLS_2_HANDLE.get().unwrap().clone(),
+            );
         });
 }

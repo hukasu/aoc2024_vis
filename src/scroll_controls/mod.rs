@@ -1,3 +1,5 @@
+pub mod ui;
+
 use bevy::{
     app::Update,
     color::Color,
