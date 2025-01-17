@@ -19,10 +19,9 @@ use bevy::{
 
 use crate::scenes::{
     days::{build_content, build_footer, build_header, button_node},
-    resources::GenericDay,
+    resources::{FontHandles, GenericDay},
     states::{InputState, Part, UiState, VisualizationState},
-    BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, FONT_HANDLE, FONT_SYMBOLS_2_HANDLE,
-    FONT_SYMBOLS_HANDLE,
+    BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR,
 };
 
 use super::{
@@ -75,6 +74,7 @@ fn controls_interaction(
     mut input: ResMut<Input>,
     mut input_state: ResMut<NextState<InputState>>,
     mut ui_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
     for (mut background_color, interaction, control) in controls.iter_mut() {
         match interaction {
@@ -95,13 +95,13 @@ fn controls_interaction(
                         None
                     };
                     commands.entity(day24.ui).despawn_descendants();
-                    build_part1_ui(&mut commands, &day24, &input, res);
+                    build_part1_ui(&mut commands, &day24, &input, res, &fonts);
                 }
                 Controls::FastForward => {
                     input.run_program();
 
                     commands.entity(day24.ui).despawn_descendants();
-                    build_part1_ui(&mut commands, &day24, &input, None);
+                    build_part1_ui(&mut commands, &day24, &input, None, &fonts);
                 }
             },
         }
@@ -113,9 +113,10 @@ fn build_ui(
     day24_resource: Res<GenericDay>,
     input: Res<Input>,
     mut next_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
     bevy::log::trace!("Day 24 Part 1");
-    build_part1_ui(&mut commands, &day24_resource, &input, None);
+    build_part1_ui(&mut commands, &day24_resource, &input, None, &fonts);
     next_state.set(UiState::Loaded);
 }
 
@@ -124,15 +125,18 @@ fn build_part1_ui(
     day24_resource: &GenericDay,
     input: &Input,
     execution_result: Option<ExecutionResult>,
+    fonts: &FontHandles,
 ) {
-    let header = build_header(commands, "day24", true);
+    let header = build_header(commands, "day24", true, fonts.font.clone());
     let content = build_content(commands, "day24");
     let footer = build_footer(commands, "day24");
 
     commands
         .entity(content)
-        .with_children(|parent| build_visualization(parent, input, execution_result));
-    commands.entity(footer).with_children(build_control_buttons);
+        .with_children(|parent| build_visualization(parent, input, execution_result, fonts));
+    commands
+        .entity(footer)
+        .with_children(|parent| build_control_buttons(parent, fonts.symbol2.clone()));
 
     commands
         .entity(day24_resource.ui)
@@ -156,6 +160,7 @@ fn build_visualization(
     parent: &mut ChildBuilder,
     input: &Input,
     execution_result: Option<ExecutionResult>,
+    fonts: &FontHandles,
 ) {
     parent
         .spawn(Node {
@@ -206,19 +211,19 @@ fn build_visualization(
                                 ..Default::default()
                             })
                             .with_children(|parent| {
-                                build_operation_wires(parent, &operation.l);
+                                build_operation_wires(parent, &operation.l, fonts.font.clone());
                                 build_operation_symbol(
                                     parent,
                                     operation.operator.to_string().as_bytes(),
-                                    FONT_HANDLE.get().unwrap().clone(),
+                                    fonts.font.clone(),
                                 );
-                                build_operation_wires(parent, &operation.r);
+                                build_operation_wires(parent, &operation.r, fonts.font.clone());
                                 build_operation_symbol(
                                     parent,
                                     "→".as_bytes(),
-                                    FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
+                                    fonts.symbol1.clone(),
                                 );
-                                build_operation_wires(parent, &operation.out);
+                                build_operation_wires(parent, &operation.out, fonts.font.clone());
                             });
                     }
                 });
@@ -376,10 +381,7 @@ fn build_intermediates(
         });
 }
 
-fn build_control_buttons(parent: &mut ChildBuilder) {
-    let font = FONT_SYMBOLS_2_HANDLE
-        .get()
-        .expect("Font should be initialized.");
+fn build_control_buttons(parent: &mut ChildBuilder, symbol: Handle<Font>) {
     parent
         .spawn((
             button_node(),
@@ -389,7 +391,7 @@ fn build_control_buttons(parent: &mut ChildBuilder) {
         .with_child((
             Text::new("⏮"),
             TextFont {
-                font: font.clone(),
+                font: symbol.clone(),
                 ..Default::default()
             },
             TextColor(Color::BLACK),
@@ -403,7 +405,7 @@ fn build_control_buttons(parent: &mut ChildBuilder) {
         .with_child((
             Text::new("⏵"),
             TextFont {
-                font: font.clone(),
+                font: symbol.clone(),
 
                 ..Default::default()
             },
@@ -418,14 +420,14 @@ fn build_control_buttons(parent: &mut ChildBuilder) {
         .with_child((
             Text::new("⏭"),
             TextFont {
-                font: font.clone(),
+                font: symbol.clone(),
                 ..Default::default()
             },
             TextColor(Color::BLACK),
         ));
 }
 
-fn build_operation_wires(parent: &mut ChildBuilder, text: &[u8]) {
+fn build_operation_wires(parent: &mut ChildBuilder, text: &[u8], font: Handle<Font>) {
     parent
         .spawn((
             Node {
@@ -439,7 +441,7 @@ fn build_operation_wires(parent: &mut ChildBuilder, text: &[u8]) {
         .with_child((
             Text::new(String::from_utf8_lossy(text)),
             TextFont {
-                font: FONT_HANDLE.get().unwrap().clone(),
+                font,
                 ..Default::default()
             },
             TextColor(Color::BLACK),

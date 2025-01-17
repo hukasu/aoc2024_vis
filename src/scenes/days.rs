@@ -1,8 +1,9 @@
 use bevy::{
+    asset::Handle,
     color::Color,
     core::Name,
     prelude::{BuildChildren, Button, ChildBuild, ChildBuilder, Commands, Entity, Text},
-    text::{TextColor, TextFont},
+    text::{Font, TextColor, TextFont},
     ui::{
         AlignItems, BackgroundColor, FlexDirection, JustifyContent, Node, PositionType, UiRect, Val,
     },
@@ -13,10 +14,14 @@ use crate::scroll_controls::BUTTON_BACKGROUND_COLOR;
 use super::{
     components::{PartChange, SceneChange},
     states::Scene,
-    FONT_HANDLE,
 };
 
-pub fn build_header(commands: &mut Commands, day: &str, part_change: bool) -> Entity {
+pub fn build_header(
+    commands: &mut Commands,
+    day: &str,
+    part_change: bool,
+    font: Handle<Font>,
+) -> Entity {
     let mut header = commands.spawn((
         Name::new(format!("{day}_header")),
         Node {
@@ -35,7 +40,7 @@ pub fn build_header(commands: &mut Commands, day: &str, part_change: bool) -> En
             ..Default::default()
         },
     ));
-    header.with_children(|parent| build_state_buttons(parent, part_change));
+    header.with_children(|parent| build_state_buttons(parent, part_change, font));
     header.id()
 }
 
@@ -80,9 +85,7 @@ pub fn build_footer(commands: &mut Commands, day: &str) -> Entity {
         .id()
 }
 
-fn build_state_buttons(parent: &mut ChildBuilder, part_change: bool) {
-    let font = FONT_HANDLE.get().expect("Font should be initialized.");
-
+fn build_state_buttons(parent: &mut ChildBuilder, part_change: bool, font: Handle<Font>) {
     parent
         .spawn((
             button_node(),

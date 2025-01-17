@@ -12,9 +12,8 @@ use bevy::{
 use crate::{
     scenes::{
         days::{build_content, build_header},
-        resources::GenericDay,
+        resources::{FontHandles, GenericDay},
         states::{InputState, Part, UiState, VisualizationState},
-        FONT_SYMBOLS_HANDLE,
     },
     scroll_controls::{ui::build_vertical_scroll_buttons, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
@@ -48,14 +47,15 @@ fn build_ui(
     day1_resource: Res<GenericDay>,
     input: Res<Input>,
     mut next_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
     bevy::log::trace!("Day 4 Part 1");
-    let header = build_header(&mut commands, "day4", true);
+    let header = build_header(&mut commands, "day4", true, fonts.font.clone());
     let content = build_content(&mut commands, "day4");
 
     commands
         .entity(content)
-        .with_children(|parent| build_visualization(parent, &input));
+        .with_children(|parent| build_visualization(parent, &input, &fonts));
     commands
         .entity(day1_resource.ui)
         .add_children(&[header, content]);
@@ -76,7 +76,7 @@ fn destroy_ui(
     ui_state.set(UiState::NotLoaded);
 }
 
-fn build_visualization(parent: &mut ChildBuilder, input: &Input) {
+fn build_visualization(parent: &mut ChildBuilder, input: &Input, fonts: &FontHandles) {
     parent
         .spawn(Node {
             top: Val::Px(50.),
@@ -164,7 +164,7 @@ fn build_visualization(parent: &mut ChildBuilder, input: &Input) {
                 window,
                 SCROLL_SPEED,
                 BUTTON_BACKGROUND_COLOR,
-                FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
+                fonts.symbol1.clone(),
             );
         });
 }

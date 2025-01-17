@@ -5,21 +5,20 @@ use bevy::{
         in_state, BuildChildren, ChildBuild, ChildBuilder, Commands, DespawnRecursiveExt,
         IntoSystemConfigs, NextState, Res, ResMut, Text,
     },
-    text::{TextColor, TextFont},
+    text::TextColor,
     ui::{
-        BackgroundColor, BorderColor, BorderRadius, FlexDirection, JustifyContent, Node, Overflow,
-        PositionType, UiRect, Val,
+        BackgroundColor, BorderColor, BorderRadius, FlexDirection, Node, Overflow, PositionType,
+        UiRect, Val,
     },
 };
 
 use crate::{
     scenes::{
         days::{build_content, build_header},
-        resources::GenericDay,
+        resources::{FontHandles, GenericDay},
         states::{UiState, VisualizationState},
-        FONT_SYMBOLS_HANDLE,
     },
-    scroll_controls::{ScrollControl, ScrollWindow, BUTTON_BACKGROUND_COLOR},
+    scroll_controls::{ui::build_vertical_scroll_buttons, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
 
 use super::input::Input;
@@ -53,14 +52,15 @@ fn build_ui(
     day6_resource: Res<GenericDay>,
     input: Res<Input>,
     mut next_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
     bevy::log::trace!("Day 6");
-    let header = build_header(&mut commands, "day6", false);
+    let header = build_header(&mut commands, "day6", false, fonts.font.clone());
     let content = build_content(&mut commands, "day6");
 
     commands
         .entity(content)
-        .with_children(|parent| build_visualization(parent, &input));
+        .with_children(|parent| build_visualization(parent, &input, &fonts));
     commands
         .entity(day6_resource.ui)
         .despawn_descendants()
@@ -69,7 +69,7 @@ fn build_ui(
     next_state.set(UiState::Loaded);
 }
 
-fn build_visualization(parent: &mut ChildBuilder, input: &Input) {
+fn build_visualization(parent: &mut ChildBuilder, input: &Input, fonts: &FontHandles) {
     parent
         .spawn(Node {
             top: Val::Px(50.),
@@ -197,62 +197,12 @@ fn build_visualization(parent: &mut ChildBuilder, input: &Input) {
                 })
                 .id();
 
-            parent
-                .spawn((Node {
-                    bottom: Val::Px(1.),
-                    right: Val::Px(1.),
-                    position_type: PositionType::Absolute,
-                    flex_direction: FlexDirection::Column,
-                    row_gap: Val::Px(5.),
-                    ..Default::default()
-                },))
-                .with_children(|parent| {
-                    parent
-                        .spawn((
-                            Node {
-                                width: Val::Px(25.),
-                                height: Val::Px(25.),
-                                justify_content: JustifyContent::Center,
-                                ..Default::default()
-                            },
-                            BackgroundColor(BUTTON_BACKGROUND_COLOR),
-                            ScrollControl {
-                                horizontal: 0.,
-                                vertical: -SCROLL_SPEED,
-                                target: window,
-                            },
-                        ))
-                        .with_child((
-                            Text::new("↑"),
-                            TextColor::BLACK,
-                            TextFont {
-                                font: FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
-                                ..Default::default()
-                            },
-                        ));
-                    parent
-                        .spawn((
-                            Node {
-                                width: Val::Px(25.),
-                                height: Val::Px(25.),
-                                justify_content: JustifyContent::Center,
-                                ..Default::default()
-                            },
-                            BackgroundColor(BUTTON_BACKGROUND_COLOR),
-                            ScrollControl {
-                                horizontal: 0.,
-                                vertical: SCROLL_SPEED,
-                                target: window,
-                            },
-                        ))
-                        .with_child((
-                            Text::new("↓"),
-                            TextColor::BLACK,
-                            TextFont {
-                                font: FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
-                                ..Default::default()
-                            },
-                        ));
-                });
+            build_vertical_scroll_buttons(
+                parent,
+                window,
+                SCROLL_SPEED,
+                BUTTON_BACKGROUND_COLOR,
+                fonts.symbol1.clone(),
+            );
         });
 }

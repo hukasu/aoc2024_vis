@@ -28,7 +28,7 @@ use crate::{loader::RawInput, scenes::states::Scene as SceneStates};
 
 use super::{
     days::{build_content, build_footer, build_header},
-    resources::GenericDay,
+    resources::{FontHandles, GenericDay},
     state_button_interactions,
     states::{InputState, Part, UiState, VisualizationState},
 };
@@ -230,8 +230,9 @@ fn build_ui(
     input: Res<input::Input>,
     mut images: ResMut<Assets<Image>>,
     mut next_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
-    let header = build_header(&mut commands, "day25", false);
+    let header = build_header(&mut commands, "day25", false, fonts.font.clone());
     let content = build_content(&mut commands, "day25");
     let footer = build_footer(&mut commands, "day25");
 

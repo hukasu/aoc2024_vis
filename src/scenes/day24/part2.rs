@@ -26,9 +26,9 @@ use crate::{
     scenes::{
         day24::{components::Gate, operation::Operator},
         days::{build_content, build_header},
-        resources::GenericDay,
+        resources::{FontHandles, GenericDay},
         states::{InputState, Part, UiState, VisualizationState},
-        BUTTON_BACKGROUND_COLOR, FONT_SYMBOLS_2_HANDLE,
+        BUTTON_BACKGROUND_COLOR,
     },
     scroll_controls::{ui::build_horizontal_scroll_buttons, ScrollWindow},
 };
@@ -116,10 +116,11 @@ fn build_ui(
     input: Res<Input>,
     asset_server: Res<AssetServer>,
     mut ui_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
     bevy::log::trace!("Day 24 Part 2");
 
-    let header = build_header(&mut commands, "day24", true);
+    let header = build_header(&mut commands, "day24", true, fonts.font.clone());
     let content = build_content(&mut commands, "day24");
 
     let gates = asset_server.load("gates.png");
@@ -131,9 +132,9 @@ fn build_ui(
         None,
     ));
 
-    commands
-        .entity(content)
-        .with_children(|parent| build_visualization(parent, &input, gates, gates_atlas_layout));
+    commands.entity(content).with_children(|parent| {
+        build_visualization(parent, &input, gates, gates_atlas_layout, &fonts)
+    });
 
     commands
         .entity(day24_resource.ui)
@@ -179,6 +180,7 @@ fn build_visualization(
     input: &Input,
     gates: Handle<Image>,
     gates_atlas_layout: Handle<TextureAtlasLayout>,
+    fonts: &FontHandles,
 ) {
     parent
         .spawn((
@@ -704,7 +706,7 @@ fn build_visualization(
                 window,
                 SCROLL_SPEED,
                 BUTTON_BACKGROUND_COLOR,
-                FONT_SYMBOLS_2_HANDLE.get().unwrap().clone(),
+                fonts.symbol1.clone(),
             );
         });
 }

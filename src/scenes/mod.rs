@@ -12,23 +12,22 @@ mod main_menu;
 mod resources;
 mod states;
 
-use std::sync::OnceLock;
-
 use bevy::{
     app::Startup,
-    asset::{AssetServer, Handle},
-    prelude::{AppExtStates, Button, Changed, Entity, NextState, Query, Res, ResMut, With},
+    asset::AssetServer,
+    prelude::{
+        AppExtStates, Button, Changed, Commands, Entity, NextState, Query, Res, ResMut, With,
+    },
     state::state::FreelyMutableState,
-    text::Font,
     ui::{BackgroundColor, Interaction},
 };
-use components::{PartChange, SceneChange};
 
 use crate::scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR};
 
-static FONT_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
-static FONT_SYMBOLS_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
-static FONT_SYMBOLS_2_HANDLE: OnceLock<Handle<Font>> = OnceLock::new();
+use self::{
+    components::{PartChange, SceneChange},
+    resources::FontHandles,
+};
 
 type ButtonWithChangedInteractionQuery<'a, 'b> = Query<
     'a,
@@ -62,25 +61,12 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
-fn load_font(asset_server: Res<AssetServer>) {
-    if FONT_HANDLE
-        .set(asset_server.load("NotoSans-VariableFont_wdth,wght.ttf"))
-        .is_err()
-    {
-        bevy::log::error!("Failed to load font.");
-    };
-    if FONT_SYMBOLS_HANDLE
-        .set(asset_server.load("NotoSansSymbols-VariableFont_wght.ttf"))
-        .is_err()
-    {
-        bevy::log::error!("Failed to load symbols font.");
-    };
-    if FONT_SYMBOLS_2_HANDLE
-        .set(asset_server.load("NotoSansSymbols2-Regular.ttf"))
-        .is_err()
-    {
-        bevy::log::error!("Failed to load symbols font.");
-    };
+fn load_font(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(FontHandles {
+        font: asset_server.load("NotoSans-VariableFont_wdth,wght.ttf"),
+        symbol1: asset_server.load("NotoSansSymbols-VariableFont_wght.ttf"),
+        symbol2: asset_server.load("NotoSansSymbols2-Regular.ttf"),
+    });
 }
 
 fn state_button_interactions<T>(

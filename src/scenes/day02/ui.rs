@@ -12,9 +12,8 @@ use bevy::{
 use crate::{
     scenes::{
         days::{build_content, build_header},
-        resources::GenericDay,
+        resources::{FontHandles, GenericDay},
         states::{UiState, VisualizationState},
-        FONT_SYMBOLS_HANDLE,
     },
     scroll_controls::{ui::build_vertical_scroll_buttons, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
@@ -39,14 +38,15 @@ fn build_ui(
     day2_resource: Res<GenericDay>,
     input: Res<input::Input>,
     mut next_state: ResMut<NextState<UiState>>,
+    fonts: Res<FontHandles>,
 ) {
     bevy::log::trace!("Day 2");
-    let header = build_header(&mut commands, "day2", false);
+    let header = build_header(&mut commands, "day2", false, fonts.font.clone());
     let content = build_content(&mut commands, "day2");
 
     commands
         .entity(content)
-        .with_children(|parent| build_visualization(parent, &input));
+        .with_children(|parent| build_visualization(parent, &input, &fonts));
 
     commands
         .entity(day2_resource.ui)
@@ -55,7 +55,7 @@ fn build_ui(
     next_state.set(UiState::Loaded);
 }
 
-fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
+fn build_visualization(parent: &mut ChildBuilder, input: &input::Input, fonts: &FontHandles) {
     let safe = input
         .reports
         .iter()
@@ -189,7 +189,7 @@ fn build_visualization(parent: &mut ChildBuilder, input: &input::Input) {
                         window,
                         SCROLL_SPEED,
                         BUTTON_BACKGROUND_COLOR,
-                        FONT_SYMBOLS_HANDLE.get().unwrap().clone(),
+                        fonts.symbol1.clone(),
                     );
                 });
         });
