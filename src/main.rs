@@ -5,8 +5,9 @@ pub mod scroll_controls;
 #[cfg(feature = "with_inspector")]
 use bevy::remote::{http::RemoteHttpPlugin, RemotePlugin};
 use bevy::{
-    app::App,
+    app::{App, PluginGroup},
     asset::AssetApp,
+    audio::AudioPlugin,
     prelude::{DefaultGizmoConfigGroup, GizmoConfigStore},
     render::view::RenderLayers,
     DefaultPlugins,
@@ -15,7 +16,11 @@ use bevy::{
 fn main() {
     let mut app = App::new();
 
-    app.add_plugins((DefaultPlugins, scenes::Plugin, scroll_controls::Plugin));
+    app.add_plugins((
+        DefaultPlugins.build().disable::<AudioPlugin>(),
+        scenes::Plugin,
+        scroll_controls::Plugin,
+    ));
     #[cfg(feature = "with_inspector")]
     app.add_plugins((RemotePlugin::default(), RemoteHttpPlugin::default()));
 
