@@ -19,7 +19,7 @@ use bevy::{
     app::Startup,
     asset::AssetServer,
     prelude::{
-        AppExtStates, Button, Changed, Commands, Entity, NextState, Query, Res, ResMut, With,
+        AppExtStates, Button, Changed, Commands, Entity, NextState, Or, Query, Res, ResMut, With,
     },
     state::state::FreelyMutableState,
     ui::{BackgroundColor, Interaction},
@@ -36,7 +36,11 @@ type ButtonWithChangedInteractionQuery<'a, 'b> = Query<
     'a,
     'b,
     (Entity, &'static mut BackgroundColor, &'static Interaction),
-    (With<Button>, Changed<Interaction>),
+    (
+        With<Button>,
+        Changed<Interaction>,
+        Or<(With<PartChange>, With<SceneChange>)>,
+    ),
 >;
 
 pub struct Plugin;
