@@ -1,6 +1,7 @@
 mod loader;
 mod scenes;
 pub mod scroll_controls;
+mod tools;
 
 #[cfg(feature = "with_inspector")]
 use bevy::remote::{http::RemoteHttpPlugin, RemotePlugin};
