@@ -30,7 +30,7 @@ use super::{
     days::{build_content, build_footer, build_header},
     resources::{FontHandles, GenericDay},
     state_button_interactions,
-    states::{InputState, Part, UiState, VisualizationState},
+    states::{InputState, UiState, VisualizationState},
 };
 
 const PIXEL_PER_UNIT: u32 = 1;
@@ -55,7 +55,7 @@ impl bevy::app::Plugin for Plugin {
             )
             .add_systems(
                 Update,
-                state_button_interactions::<Part>.run_if(in_state(VisualizationState::<25>::Ready)),
+                state_button_interactions.run_if(in_state(VisualizationState::<25>::Ready)),
             )
             .add_systems(
                 Update,

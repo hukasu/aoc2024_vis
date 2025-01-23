@@ -12,6 +12,7 @@ use bevy::{
 
 pub const BUTTON_BACKGROUND_COLOR: Color = Color::srgb(0.7, 0.7, 0.7);
 pub const BUTTON_HOVERED_BACKGROUND_COLOR: Color = Color::srgb(0.8, 0.8, 0.9);
+pub const BUTTON_SELECTED_BACKGROUND_COLOR: Color = Color::srgb(0.8, 0.9, 0.8);
 
 pub struct Plugin;
 

@@ -21,7 +21,7 @@ use crate::loader::RawInput as InputAsset;
 use super::{
     resources::GenericDay,
     state_button_interactions,
-    states::{InputState, Part, Scene, VisualizationState},
+    states::{InputState, Scene, VisualizationState},
 };
 
 use self::input::Input;
@@ -42,7 +42,7 @@ impl bevy::app::Plugin for Plugin {
             )
             .add_systems(
                 Update,
-                state_button_interactions::<Part>.run_if(in_state(Scene::Day(13))),
+                state_button_interactions.run_if(in_state(Scene::Day(13))),
             );
     }
 }

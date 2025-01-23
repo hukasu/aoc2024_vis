@@ -23,13 +23,16 @@ use bevy::{
     app::{PluginGroup, Startup},
     asset::AssetServer,
     prelude::{
-        AppExtStates, Button, Changed, Commands, Entity, NextState, Or, Query, Res, ResMut, With,
+        AppExtStates, Button, Changed, Commands, Entity, NextState, Or, Query, Res, ResMut, State,
+        With,
     },
-    state::state::FreelyMutableState,
     ui::{BackgroundColor, Interaction},
 };
+use states::Part;
 
-use crate::scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR};
+use crate::scroll_controls::{
+    BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, BUTTON_SELECTED_BACKGROUND_COLOR,
+};
 
 use self::{
     components::{PartChange, SceneChange},
@@ -70,24 +73,31 @@ fn load_font(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 }
 
-fn state_button_interactions<T>(
+fn state_button_interactions(
     mut buttons: ButtonWithChangedInteractionQuery,
     state_changes: Query<&SceneChange>,
     part_changes: Query<&PartChange>,
+    current_part: Res<State<Part>>,
     mut next_state: ResMut<NextState<states::Scene>>,
-    mut part_next_state: ResMut<NextState<T>>,
-) where
-    T: FreelyMutableState + From<PartChange>,
-{
+    mut part_next_state: ResMut<NextState<Part>>,
+) {
     for (button, mut background_color, interaction) in buttons.iter_mut() {
         match interaction {
-            Interaction::None => background_color.0 = BUTTON_BACKGROUND_COLOR,
+            Interaction::None => {
+                let mut color = BUTTON_BACKGROUND_COLOR;
+                if let Ok(part_change) = part_changes.get(button) {
+                    if Part::from(*part_change) == *current_part.get() {
+                        color = BUTTON_SELECTED_BACKGROUND_COLOR;
+                    }
+                }
+                background_color.0 = color;
+            }
             Interaction::Hovered => background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR,
             Interaction::Pressed => {
                 if let Ok(state_change) = state_changes.get(button) {
                     next_state.set(state_change.0);
                 } else if let Ok(part_change) = part_changes.get(button) {
-                    part_next_state.set(T::from(*part_change));
+                    part_next_state.set(Part::from(*part_change));
                 }
             }
         }
