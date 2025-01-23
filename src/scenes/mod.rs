@@ -11,6 +11,7 @@ mod day09;
 mod day10;
 mod day11;
 mod day12;
+mod day13;
 mod day24;
 mod day25;
 mod days;
@@ -19,7 +20,7 @@ mod resources;
 mod states;
 
 use bevy::{
-    app::Startup,
+    app::{PluginGroup, Startup},
     asset::AssetServer,
     prelude::{
         AppExtStates, Button, Changed, Commands, Entity, NextState, Or, Query, Res, ResMut, With,
@@ -50,23 +51,7 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins((
-            main_menu::Plugin,
-            day01::Plugin,
-            day02::Plugin,
-            day03::Plugin,
-            day04::Plugin,
-            day05::Plugin,
-            day06::Plugin,
-            day07::Plugin,
-            day08::Plugin,
-            day09::Plugin,
-            day10::Plugin,
-            day11::Plugin,
-            day12::Plugin,
-            day24::Plugin,
-            day25::Plugin,
-        ));
+        app.add_plugins(ScenesPluginGroup);
 
         app.init_state::<states::Scene>()
             .add_sub_state::<states::Part>()
@@ -106,5 +91,29 @@ fn state_button_interactions<T>(
                 }
             }
         }
+    }
+}
+
+pub struct ScenesPluginGroup;
+
+impl PluginGroup for ScenesPluginGroup {
+    fn build(self) -> bevy::app::PluginGroupBuilder {
+        bevy::app::PluginGroupBuilder::start::<Self>()
+            .add(main_menu::Plugin)
+            .add(day01::Plugin)
+            .add(day02::Plugin)
+            .add(day03::Plugin)
+            .add(day04::Plugin)
+            .add(day05::Plugin)
+            .add(day06::Plugin)
+            .add(day07::Plugin)
+            .add(day08::Plugin)
+            .add(day09::Plugin)
+            .add(day10::Plugin)
+            .add(day11::Plugin)
+            .add(day12::Plugin)
+            .add(day13::Plugin)
+            .add(day24::Plugin)
+            .add(day25::Plugin)
     }
 }
