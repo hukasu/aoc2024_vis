@@ -2,20 +2,22 @@ use bevy::{
     app::Update,
     color::{palettes, Color},
     prelude::{
-        in_state, resource_changed, resource_exists, state_changed, BuildChildren, Button, Changed,
-        ChildBuild, Commands, Component, Condition, DespawnRecursiveExt, Entity, IntoSystemConfigs,
-        Query, Res, Resource, Single, Text,
+        in_state, resource_changed, resource_exists, state_changed, BuildChildren, Button,
+        ChildBuild, ChildBuilder, Click, Commands, Component, Condition, DespawnRecursiveExt,
+        Entity, IntoSystemConfigs, Pointer, Query, Res, Resource, Single, Text, Trigger,
     },
-    text::TextColor,
+    text::{TextColor, TextFont},
     ui::{
-        AlignSelf, BackgroundColor, BorderColor, BorderRadius, FlexDirection, Interaction, Node,
-        PositionType, UiRect, Val,
+        AlignSelf, BackgroundColor, BorderColor, BorderRadius, FlexDirection, FlexWrap,
+        Interaction, Node, PositionType, UiRect, Val,
     },
 };
 
 use crate::{
     scenes::states::{Part, VisualizationState},
-    scroll_controls::{BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR},
+    scroll_controls::{
+        BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, BUTTON_SELECTED_BACKGROUND_COLOR,
+    },
 };
 
 use super::input::Input;
@@ -200,17 +202,60 @@ fn update_canvas(
 }
 
 fn selected_claw_machine_interaction(
-    mut commands: Commands,
-    mut buttons: Query<
-        (&SelectedClawMachine, &Interaction, &mut BackgroundColor),
-        Changed<Interaction>,
-    >,
+    mut buttons: Query<(&SelectedClawMachine, &Interaction, &mut BackgroundColor)>,
+    selected_claw_machine: Res<SelectedClawMachine>,
 ) {
-    for (selected_claw_machine, interaction, mut background_color) in buttons.iter_mut() {
+    for (button_selected_claw_machine, interaction, mut background_color) in buttons.iter_mut() {
         match interaction {
-            Interaction::None => background_color.0 = BUTTON_BACKGROUND_COLOR,
-            Interaction::Hovered => background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR,
-            Interaction::Pressed => commands.insert_resource(*selected_claw_machine),
+            Interaction::None => {
+                let mut color = BUTTON_BACKGROUND_COLOR;
+                if selected_claw_machine.0 == button_selected_claw_machine.0 {
+                    color = BUTTON_SELECTED_BACKGROUND_COLOR;
+                }
+                background_color.0 = color;
+            }
+            Interaction::Hovered | Interaction::Pressed => {
+                background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR
+            }
         }
     }
+}
+
+pub fn build_claw_machine_buttons(parent: &mut ChildBuilder, input: &Input) {
+    parent
+        .spawn(Node {
+            flex_direction: FlexDirection::Row,
+            flex_wrap: FlexWrap::Wrap,
+            column_gap: Val::Px(4.),
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            for i in 0..input.machines.len() {
+                parent
+                    .spawn((
+                        Node {
+                            padding: UiRect::all(Val::Px(4.)),
+                            ..Default::default()
+                        },
+                        SelectedClawMachine(i),
+                    ))
+                    .observe(change_selection)
+                    .with_child((
+                        Text::new((i + 1).to_string()),
+                        TextColor(Color::BLACK),
+                        TextFont {
+                            font_size: 8.,
+                            ..Default::default()
+                        },
+                    ));
+            }
+        });
+}
+
+fn change_selection(
+    trigger: Trigger<Pointer<Click>>,
+    mut commands: Commands,
+    buttons: Query<&SelectedClawMachine>,
+) {
+    commands.insert_resource(*buttons.get(trigger.entity()).unwrap());
 }

@@ -5,8 +5,8 @@ use bevy::{
         in_state, BuildChildren, ChildBuild, ChildBuilder, Commands, Condition,
         DespawnRecursiveExt, IntoSystemConfigs, NextState, Res, ResMut, Text,
     },
-    text::{TextColor, TextFont},
-    ui::{BorderColor, BorderRadius, FlexDirection, FlexWrap, Node, PositionType, UiRect, Val},
+    text::TextColor,
+    ui::{BorderColor, BorderRadius, FlexDirection, Node, PositionType, UiRect, Val},
 };
 
 use crate::scenes::{
@@ -16,7 +16,7 @@ use crate::scenes::{
 };
 
 use super::{
-    claw_machine::{ClawMachineCanvas, SelectedClawMachine},
+    claw_machine::{build_claw_machine_buttons, ClawMachineCanvas},
     input::Input,
 };
 
@@ -115,33 +115,7 @@ fn build_visualization(parent: &mut ChildBuilder, input: &Input) {
                         });
                 });
 
-            parent
-                .spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    flex_wrap: FlexWrap::Wrap,
-                    column_gap: Val::Px(4.),
-                    ..Default::default()
-                })
-                .with_children(|parent| {
-                    for i in 0..input.machines.len() {
-                        parent
-                            .spawn((
-                                Node {
-                                    padding: UiRect::all(Val::Px(4.)),
-                                    ..Default::default()
-                                },
-                                SelectedClawMachine(i),
-                            ))
-                            .with_child((
-                                Text::new((i + 1).to_string()),
-                                TextColor(Color::BLACK),
-                                TextFont {
-                                    font_size: 8.,
-                                    ..Default::default()
-                                },
-                            ));
-                    }
-                });
+            build_claw_machine_buttons(parent, input);
 
             parent.spawn((
                 Node {
