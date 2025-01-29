@@ -10,7 +10,7 @@ These are the problems that have a visualization
 |4| ✅ | ✅ | ✅ | 
 |5| ✅ | ✅ | ✅ | 
 |6| ✅ | ✅ |    | 
-|7| ✅ | ❌ |    | 
+|7| ✅ | ✅ |    | 
 |8| ✅ | ❌ |    | 
 |9| ✅ | ❌ |    | 
 
