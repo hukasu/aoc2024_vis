@@ -7,7 +7,7 @@ pub struct Coord {
 }
 
 impl Coord {
-    pub fn new(row: usize, column: usize) -> Self {
+    pub const fn new(row: usize, column: usize) -> Self {
         Self { row, column }
     }
 

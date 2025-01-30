@@ -14,6 +14,7 @@ pub struct Maze<'a> {
     maze: Vec2d<'a, u8>,
     start: Coord,
     end: Coord,
+    bounds: Coord,
     turn_cost: usize,
 }
 
@@ -25,6 +26,22 @@ struct MazeContext<'a> {
 }
 
 impl<'a> Maze<'a> {
+    pub fn new(
+        maze: Vec2d<'a, u8>,
+        start: Coord,
+        end: Coord,
+        bounds: Coord,
+        turn_cost: usize,
+    ) -> Self {
+        Self {
+            maze,
+            start,
+            end,
+            bounds,
+            turn_cost,
+        }
+    }
+
     pub fn parse(data: &'a mut [u8], turn_cost: usize) -> Maze<'a> {
         let maze = data.split(|c| c == &b'\n').collect::<Vec<_>>();
         let height = maze.len();
@@ -49,6 +66,7 @@ impl<'a> Maze<'a> {
             maze: Vec2d::new(data, width + 1, height),
             start,
             end,
+            bounds: Coord::new(width + 2, height + 1),
             turn_cost,
         }
     }
@@ -143,7 +161,9 @@ impl<'a> Maze<'a> {
         (coord, coord_score, direction, path, retry): &MazeContextQueueItem,
         context: &mut MazeContext,
     ) {
-        let step = direction.step(*coord);
+        let Some(step) = direction.step(*coord, self.bounds) else {
+            return;
+        };
         if self.maze[step] != b'#' {
             let score = &mut context.maze_tiles[step];
             match (*score).cmp(&(coord_score + 1)) {

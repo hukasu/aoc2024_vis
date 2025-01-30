@@ -199,7 +199,7 @@ impl Warehouse {
     }
 
     fn move_robot(&mut self, robot_move: RobotMove) {
-        let next = robot_move.step(self.robot);
+        let next = robot_move.step_unchecked(self.robot);
         if self.can_push_box(next, robot_move, true) {
             self.propagate_push(self.robot, robot_move, true);
             self.robot = next;
@@ -219,7 +219,7 @@ impl Warehouse {
             WarehouseTile::Empty => true,
             WarehouseTile::Wall => false,
             WarehouseTile::BoxLeft => {
-                let next = robot_move.step(coord);
+                let next = robot_move.step_unchecked(coord);
                 let right = coord + (0, 1);
 
                 if right == next {
@@ -234,7 +234,7 @@ impl Warehouse {
                 }
             }
             WarehouseTile::BoxRight => {
-                let next = robot_move.step(coord);
+                let next = robot_move.step_unchecked(coord);
                 let left = coord - (0, 1);
 
                 if left == next {
@@ -257,7 +257,7 @@ impl Warehouse {
             WarehouseTile::Empty => (),
             WarehouseTile::Wall => unreachable!("Wall should not be part of propagation"),
             WarehouseTile::BoxLeft => {
-                let next = robot_move.step(coord);
+                let next = robot_move.step_unchecked(coord);
                 let right = coord + (0, 1);
                 if right == next {
                     self.propagate_push(next, robot_move, false);
@@ -271,7 +271,7 @@ impl Warehouse {
                 *self.get_coord_mut(coord) = WarehouseTile::Empty;
             }
             WarehouseTile::BoxRight => {
-                let next = robot_move.step(coord);
+                let next = robot_move.step_unchecked(coord);
                 let left = coord - (0, 1);
                 if left == next {
                     self.propagate_push(next, robot_move, false);
@@ -285,7 +285,7 @@ impl Warehouse {
                 *self.get_coord_mut(coord) = WarehouseTile::Empty;
             }
             WarehouseTile::Robot => {
-                let next = robot_move.step(coord);
+                let next = robot_move.step_unchecked(coord);
                 self.propagate_push(next, robot_move, true);
                 *self.get_coord_mut(next) = WarehouseTile::Robot;
                 *self.get_coord_mut(coord) = WarehouseTile::Empty;
