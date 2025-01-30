@@ -43,11 +43,6 @@ impl bevy::app::Plugin for Plugin {
         )
         .add_systems(
             Update,
-            super::process_input
-                .run_if(in_state(Part::Part1).and(in_state(VisualizationState::<9>::WaitingInput))),
-        )
-        .add_systems(
-            Update,
             run_refrag.run_if(
                 in_state(Part::Part1)
                     .and(in_state(VisualizationState::<9>::Ready))

@@ -6,21 +6,21 @@ use bevy::{
     color::{palettes, Color},
     core::Name,
     prelude::{
-        in_state, resource_exists, BuildChildren, Button, Changed, ChildBuild, ChildBuilder,
-        Commands, DespawnRecursiveExt, IntoSystemConfigs, NextState, OnExit, Query, Res, ResMut,
-        Text, With,
+        in_state, BuildChildren, Button, Changed, ChildBuild, ChildBuilder, Commands, Condition,
+        DespawnRecursiveExt, DetectChanges, Entity, IntoSystemConfigs, NextState, Query, Ref, Res,
+        ResMut, Single, Text, With,
     },
     text::{Font, TextColor, TextFont},
     ui::{
         AlignItems, BackgroundColor, BorderColor, FlexDirection, FlexWrap, Interaction,
-        JustifyContent, Node, UiRect, Val,
+        JustifyContent, Node, PositionType, UiRect, Val,
     },
 };
 
 use crate::scenes::{
     days::{build_content, build_footer, build_header, button_node},
     resources::{FontHandles, GenericDay},
-    states::{InputState, Part, UiState, VisualizationState},
+    states::{Part, UiState, VisualizationState},
     BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR,
 };
 
@@ -40,18 +40,18 @@ impl bevy::app::Plugin for Plugin {
                 .run_if(in_state(VisualizationState::<24>::WaitingUi)),
         )
         .add_systems(
-            OnExit(Part::Part1),
-            destroy_ui.before(super::destroy_day_24),
-        )
-        .add_systems(
             Update,
             controls_interaction
                 .run_if(in_state(Part::Part1))
-                .run_if(in_state(VisualizationState::<24>::Ready))
-                // For some reason it is taking some time for the VisualizationState
-                // to update and on the frame that changes from Part2 to Part1 it still
-                // has the value of Ready, even though Input does not exists
-                .run_if(resource_exists::<Input>),
+                .run_if(in_state(VisualizationState::<24>::Ready)),
+        )
+        .add_systems(
+            Update,
+            update_visualization.run_if(
+                in_state(Part::Part1)
+                    .and(in_state(VisualizationState::<24>::Ready))
+                    .and(update_visualization_condition),
+            ),
         );
     }
 }
@@ -70,11 +70,8 @@ type ControlWithChangedInteractionQuery<'a, 'b> = Query<
 fn controls_interaction(
     mut commands: Commands,
     mut controls: ControlWithChangedInteractionQuery,
-    day24: Res<GenericDay>,
-    mut input: ResMut<Input>,
-    mut input_state: ResMut<NextState<InputState>>,
-    mut ui_state: ResMut<NextState<UiState>>,
-    fonts: Res<FontHandles>,
+    mut input: Single<(Entity, &mut Input)>,
+    original_input: Res<Input>,
 ) {
     for (mut background_color, interaction, control) in controls.iter_mut() {
         match interaction {
@@ -82,26 +79,15 @@ fn controls_interaction(
             Interaction::Hovered => background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR,
             Interaction::Pressed => match control {
                 Controls::Reset => {
-                    commands.remove_resource::<Input>();
-                    commands.entity(day24.ui).despawn_descendants();
-
-                    input_state.set(InputState::NotLoaded);
-                    ui_state.set(UiState::NotLoaded);
+                    *input.1 = original_input.clone();
                 }
                 Controls::Step => {
-                    let res = if !input.operations.is_empty() {
-                        Some(input.execute_top())
-                    } else {
-                        None
-                    };
-                    commands.entity(day24.ui).despawn_descendants();
-                    build_part1_ui(&mut commands, &day24, &input, res, &fonts);
+                    if !input.1.operations.is_empty() {
+                        commands.entity(input.0).insert(input.1.execute_top());
+                    }
                 }
                 Controls::FastForward => {
-                    input.run_program();
-
-                    commands.entity(day24.ui).despawn_descendants();
-                    build_part1_ui(&mut commands, &day24, &input, None, &fonts);
+                    input.1.run_program();
                 }
             },
         }
@@ -115,60 +101,56 @@ fn build_ui(
     mut next_state: ResMut<NextState<UiState>>,
     fonts: Res<FontHandles>,
 ) {
-    bevy::log::trace!("Day 24 Part 1");
-    build_part1_ui(&mut commands, &day24_resource, &input, None, &fonts);
-    next_state.set(UiState::Loaded);
-}
-
-fn build_part1_ui(
-    commands: &mut Commands,
-    day24_resource: &GenericDay,
-    input: &Input,
-    execution_result: Option<ExecutionResult>,
-    fonts: &FontHandles,
-) {
-    let header = build_header(commands, "day24", true, fonts.font.clone());
-    let content = build_content(commands, "day24");
-    let footer = build_footer(commands, "day24");
+    let header = build_header(&mut commands, "day24", true, fonts.font.clone());
+    let content = build_content(&mut commands, "day24");
+    let footer = build_footer(&mut commands, "day24");
 
     commands
         .entity(content)
-        .with_children(|parent| build_visualization(parent, input, execution_result, fonts));
+        .with_children(|parent| build_visualization(parent, &input));
     commands
         .entity(footer)
         .with_children(|parent| build_control_buttons(parent, fonts.symbol2.clone()));
 
     commands
         .entity(day24_resource.ui)
+        .despawn_descendants()
         .add_children(&[header, content, footer]);
+
+    next_state.set(UiState::Loaded);
 }
 
-fn destroy_ui(
-    mut commands: Commands,
-    day24_resource: Res<GenericDay>,
-    mut input_state: ResMut<NextState<InputState>>,
-    mut ui_state: ResMut<NextState<UiState>>,
-) {
-    commands.remove_resource::<Input>();
-    commands.entity(day24_resource.ui).despawn_descendants();
-
-    input_state.set(InputState::NotLoaded);
-    ui_state.set(UiState::NotLoaded);
-}
-
-fn build_visualization(
-    parent: &mut ChildBuilder,
-    input: &Input,
-    execution_result: Option<ExecutionResult>,
-    fonts: &FontHandles,
-) {
-    parent
-        .spawn(Node {
+fn build_visualization(parent: &mut ChildBuilder, input: &Input) {
+    parent.spawn((
+        Node {
             top: Val::Px(50.),
+            bottom: Val::Px(10.),
+            left: Val::Px(10.),
+            right: Val::Px(10.),
             flex_direction: FlexDirection::Row,
+            position_type: PositionType::Absolute,
+            row_gap: Val::Px(12.),
             ..Default::default()
-        })
+        },
+        input.clone(),
+    ));
+}
+
+fn update_visualization_condition(visualization: Single<Ref<Input>>) -> bool {
+    visualization.is_changed()
+}
+
+fn update_visualization(
+    mut commands: Commands,
+    visualization: Single<(Entity, &Input, Option<&ExecutionResult>)>,
+    fonts: Res<FontHandles>,
+) {
+    commands
+        .entity(visualization.0)
+        .despawn_descendants()
         .with_children(|parent| {
+            let input = &visualization.1;
+            let execution_result = visualization.2.cloned();
             parent
                 .spawn((
                     Name::new("day_24_part1_visualization"),
@@ -178,13 +160,13 @@ fn build_visualization(
                     },
                 ))
                 .with_children(|parent| {
-                    build_input_row(parent, b'x', &input.x, true, execution_result);
-                    build_input_row(parent, b'y', &input.y, true, execution_result);
+                    build_input_row(parent, b'x', &input.x, true, execution_result.clone());
+                    build_input_row(parent, b'y', &input.y, true, execution_result.clone());
                     parent.spawn(Node {
                         height: Val::Px(5.),
                         ..Default::default()
                     });
-                    build_input_row(parent, b'z', &input.z, false, execution_result);
+                    build_input_row(parent, b'z', &input.z, false, execution_result.clone());
                     parent.spawn(Node {
                         height: Val::Px(5.),
                         ..Default::default()
@@ -273,20 +255,20 @@ fn build_input_row(
                 let Ok(i) = u8::try_from(i) else {
                     unreachable!("Will never have more than u8 values");
                 };
-                let border_color = if let Some(result) = execution_result {
+                let border_color = if let Some(result) = &execution_result {
                     let test_wire = [title, (i / 10) + b'0', (i % 10) + b'0'];
                     match result {
-                        Ok((l, r, out)) => {
-                            if test_wire == l || test_wire == r {
+                        ExecutionResult::Success(l, r, out) => {
+                            if test_wire == *l || test_wire == *r {
                                 palettes::tailwind::GREEN_500.into()
-                            } else if test_wire == out {
+                            } else if test_wire == *out {
                                 palettes::tailwind::YELLOW_500.into()
                             } else {
                                 BUTTON_BACKGROUND_COLOR
                             }
                         }
-                        Err((l, r)) => {
-                            if test_wire == l || test_wire == r {
+                        ExecutionResult::Failure(l, r) => {
+                            if test_wire == *l || test_wire == *r {
                                 palettes::tailwind::RED_500.into()
                             } else {
                                 BUTTON_BACKGROUND_COLOR
@@ -327,19 +309,19 @@ fn build_intermediates(
         },))
         .with_children(|parent| {
             for (key, val) in intermediates.iter().rev() {
-                let border_color = if let Some(result) = execution_result {
+                let border_color = if let Some(result) = &execution_result {
                     match result {
-                        Ok((l, r, out)) => {
-                            if key == &l || key == &r {
+                        ExecutionResult::Success(l, r, out) => {
+                            if key == l || key == r {
                                 palettes::tailwind::GREEN_500.into()
-                            } else if key == &out {
+                            } else if key == out {
                                 palettes::tailwind::YELLOW_500.into()
                             } else {
                                 BUTTON_BACKGROUND_COLOR
                             }
                         }
-                        Err((l, r)) => {
-                            if key == &l || key == &r {
+                        ExecutionResult::Failure(l, r) => {
+                            if key == l || key == r {
                                 palettes::tailwind::RED_500.into()
                             } else {
                                 BUTTON_BACKGROUND_COLOR

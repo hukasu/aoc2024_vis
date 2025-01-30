@@ -33,7 +33,7 @@ use bevy::{
     },
     ui::{BackgroundColor, Interaction},
 };
-use states::Part;
+use states::{Part, UiState};
 
 use crate::scroll_controls::{
     BUTTON_BACKGROUND_COLOR, BUTTON_HOVERED_BACKGROUND_COLOR, BUTTON_SELECTED_BACKGROUND_COLOR,
@@ -85,6 +85,7 @@ fn state_button_interactions(
     current_part: Res<State<Part>>,
     mut next_state: ResMut<NextState<states::Scene>>,
     mut part_next_state: ResMut<NextState<Part>>,
+    mut ui_state: ResMut<NextState<UiState>>,
 ) {
     for (button, mut background_color, interaction) in buttons.iter_mut() {
         match interaction {
@@ -99,6 +100,7 @@ fn state_button_interactions(
             }
             Interaction::Hovered => background_color.0 = BUTTON_HOVERED_BACKGROUND_COLOR,
             Interaction::Pressed => {
+                ui_state.set(UiState::NotLoaded);
                 if let Ok(state_change) = state_changes.get(button) {
                     next_state.set(state_change.0);
                 } else if let Ok(part_change) = part_changes.get(button) {

@@ -27,7 +27,7 @@ use crate::{
         day24::{components::Gate, operation::Operator},
         days::{build_content, build_header},
         resources::{FontHandles, GenericDay},
-        states::{InputState, Part, UiState, VisualizationState},
+        states::{Part, UiState, VisualizationState},
         BUTTON_BACKGROUND_COLOR,
     },
     scroll_controls::{ui::build_horizontal_scroll_buttons, ScrollWindow},
@@ -52,10 +52,6 @@ impl bevy::app::Plugin for Plugin {
             build_ui
                 .run_if(in_state(Part::Part2))
                 .run_if(in_state(VisualizationState::<24>::WaitingUi)),
-        )
-        .add_systems(
-            OnExit(Part::Part2),
-            destroy_ui.before(super::destroy_day_24),
         )
         .add_systems(
             Update,
@@ -138,22 +134,10 @@ fn build_ui(
 
     commands
         .entity(day24_resource.ui)
+        .despawn_descendants()
         .add_children(&[header, content]);
 
     ui_state.set(UiState::Loaded);
-}
-
-fn destroy_ui(
-    mut commands: Commands,
-    day24_resource: Res<GenericDay>,
-    mut input_state: ResMut<NextState<InputState>>,
-    mut ui_state: ResMut<NextState<UiState>>,
-) {
-    commands.remove_resource::<Input>();
-    commands.entity(day24_resource.ui).despawn_descendants();
-
-    input_state.set(InputState::NotLoaded);
-    ui_state.set(UiState::NotLoaded);
 }
 
 fn spawn_gizmos_camera(mut commands: Commands) {

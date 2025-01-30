@@ -37,6 +37,10 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(
             Update,
             state_button_interactions.run_if(in_state(Scene::Day(1))),
+        )
+        .add_systems(
+            Update,
+            process_input.run_if(in_state(VisualizationState::<1>::WaitingInput)),
         );
     }
 }

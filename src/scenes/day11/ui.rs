@@ -39,10 +39,6 @@ impl bevy::app::Plugin for Plugin {
         )
         .add_systems(
             Update,
-            super::process_input.run_if(in_state(VisualizationState::<11>::WaitingInput)),
-        )
-        .add_systems(
-            Update,
             rebuild_pebbles
                 .run_if(in_state(VisualizationState::<11>::Ready).and(resource_changed::<Input>)),
         );

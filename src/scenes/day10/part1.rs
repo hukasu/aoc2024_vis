@@ -39,12 +39,6 @@ impl bevy::app::Plugin for Plugin {
             Update,
             build_ui
                 .run_if(in_state(Part::Part1).and(in_state(VisualizationState::<10>::WaitingUi))),
-        )
-        .add_systems(
-            Update,
-            super::process_input.run_if(
-                in_state(Part::Part1).and(in_state(VisualizationState::<10>::WaitingInput)),
-            ),
         );
     }
 }

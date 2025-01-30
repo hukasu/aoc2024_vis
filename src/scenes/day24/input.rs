@@ -1,14 +1,18 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use bevy::prelude::Resource;
+use bevy::prelude::{Component, Resource};
 
 use crate::loader::RawInput;
 
 use super::operation::{Operation, Operator};
 
-pub type ExecutionResult = Result<([u8; 3], [u8; 3], [u8; 3]), ([u8; 3], [u8; 3])>;
+#[derive(Debug, Clone, Component)]
+pub enum ExecutionResult {
+    Success([u8; 3], [u8; 3], [u8; 3]),
+    Failure([u8; 3], [u8; 3]),
+}
 
-#[derive(Debug, Resource)]
+#[derive(Debug, Clone, Resource, Component)]
 pub struct Input {
     pub x: [u8; 45],
     pub y: [u8; 45],
@@ -200,10 +204,10 @@ impl Input {
         if let (Some(l), Some(r)) = (self.get(top.l), self.get(top.r)) {
             let res = top.operator.func()(l, r);
             self.set(top.out, res);
-            Ok((top.l, top.r, top.out))
+            ExecutionResult::Success(top.l, top.r, top.out)
         } else {
             self.operations.push(top.clone());
-            Err((top.l, top.r))
+            ExecutionResult::Failure(top.l, top.r)
         }
     }
 

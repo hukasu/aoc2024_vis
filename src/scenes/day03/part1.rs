@@ -3,7 +3,7 @@ use bevy::{
     color::{palettes, Color},
     prelude::{
         in_state, BuildChildren, ChildBuild, ChildBuilder, Commands, DespawnRecursiveExt,
-        IntoSystemConfigs, NextState, OnExit, Res, ResMut, Text,
+        IntoSystemConfigs, NextState, Res, ResMut, Text,
     },
     text::{TextColor, TextFont},
     ui::{BorderColor, BorderRadius, FlexDirection, Node, Overflow, PositionType, UiRect, Val},
@@ -13,7 +13,7 @@ use crate::{
     scenes::{
         days::{build_content, build_header},
         resources::{FontHandles, GenericDay},
-        states::{InputState, Part, UiState, VisualizationState},
+        states::{Part, UiState, VisualizationState},
     },
     scroll_controls::{ui::build_vertical_scroll_buttons, ScrollWindow, BUTTON_BACKGROUND_COLOR},
 };
@@ -31,13 +31,6 @@ impl bevy::app::Plugin for Plugin {
             build_ui
                 .run_if(in_state(Part::Part1))
                 .run_if(in_state(VisualizationState::<3>::WaitingUi)),
-        )
-        .add_systems(OnExit(Part::Part1), destroy_ui.before(super::destroy_day_3))
-        .add_systems(
-            Update,
-            super::process_input
-                .run_if(in_state(Part::Part1))
-                .run_if(in_state(VisualizationState::<3>::WaitingInput)),
         );
     }
 }
@@ -56,24 +49,13 @@ fn build_ui(
     commands
         .entity(content)
         .with_children(|parent| build_visualization(parent, &input, &fonts));
+
     commands
         .entity(day1_resource.ui)
+        .despawn_descendants()
         .add_children(&[header, content]);
 
     next_state.set(UiState::Loaded);
-}
-
-fn destroy_ui(
-    mut commands: Commands,
-    day1_resource: Res<GenericDay>,
-    mut input_state: ResMut<NextState<InputState>>,
-    mut ui_state: ResMut<NextState<UiState>>,
-) {
-    commands.remove_resource::<Input>();
-    commands.entity(day1_resource.ui).despawn_descendants();
-
-    input_state.set(InputState::NotLoaded);
-    ui_state.set(UiState::NotLoaded);
 }
 
 fn build_visualization(parent: &mut ChildBuilder, input: &Input, fonts: &FontHandles) {
