@@ -11,6 +11,7 @@ use bevy::{
     audio::AudioPlugin,
     prelude::{DefaultGizmoConfigGroup, GizmoConfigStore},
     render::view::RenderLayers,
+    window::{Window, WindowPlugin},
     DefaultPlugins,
 };
 
@@ -18,7 +19,16 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins((
-        DefaultPlugins.build().disable::<AudioPlugin>(),
+        DefaultPlugins
+            .build()
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Advent of Code 2024".to_string(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .disable::<AudioPlugin>(),
         scenes::Plugin,
         scroll_controls::Plugin,
     ));
