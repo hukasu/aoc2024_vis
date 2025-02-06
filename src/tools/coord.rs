@@ -10,29 +10,6 @@ impl Coord {
     pub const fn new(row: usize, column: usize) -> Self {
         Self { row, column }
     }
-
-    pub fn dist(&self, other: &Coord) -> usize {
-        self.row.abs_diff(other.row) + self.column.abs_diff(other.column)
-    }
-
-    pub fn adjacent_4_way(&self, bounds: Coord) -> [Option<Coord>; 4] {
-        [
-            self.row
-                .checked_sub(1)
-                .map(|row| Coord::new(row, self.column)),
-            self.row
-                .checked_add(1)
-                .filter(|row| *row < bounds.row)
-                .map(|row| Coord::new(row, self.column)),
-            self.column
-                .checked_sub(1)
-                .map(|column| Coord::new(self.row, column)),
-            self.column
-                .checked_add(1)
-                .filter(|column| *column < bounds.column)
-                .map(|column| Coord::new(self.row, column)),
-        ]
-    }
 }
 
 impl Add<(usize, usize)> for Coord {
