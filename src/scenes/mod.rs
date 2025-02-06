@@ -19,6 +19,7 @@ mod day17;
 mod day18;
 mod day19;
 mod day20;
+mod day21;
 mod day24;
 mod day25;
 mod days;
@@ -139,6 +140,7 @@ impl PluginGroup for ScenesPluginGroup {
             .add(day18::Plugin)
             .add(day19::Plugin)
             .add(day20::Plugin)
+            .add(day21::Plugin)
             .add(day24::Plugin)
             .add(day25::Plugin)
     }
