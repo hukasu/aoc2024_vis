@@ -174,31 +174,7 @@ fn build_ui_options(parent: &mut ChildBuilder) {
                     },
                 ))
                 .with_children(|parent| {
-                    for i in 21..=22 {
-                        parent.spawn((
-                            Name::new(format!("main_menu_day_{i}")),
-                            Text::new(format!("Day {i}")),
-                            Node {
-                                padding: UiRect::all(Val::Px(3.)),
-                                ..Default::default()
-                            },
-                            Button,
-                            SceneChange(Scene::Day(i)),
-                        ));
-                    }
-                    for i in 23..24 {
-                        parent.spawn((
-                            Name::new(format!("main_menu_day_{i}")),
-                            Text::new(format!("Day {i}")),
-                            Node {
-                                padding: UiRect::all(Val::Px(3.)),
-                                ..Default::default()
-                            },
-                            Button,
-                            Disabled,
-                        ));
-                    }
-                    for i in 24..=25 {
+                    for i in 21..=25 {
                         parent.spawn((
                             Name::new(format!("main_menu_day_{i}")),
                             Text::new(format!("Day {i}")),
