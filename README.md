@@ -5,7 +5,7 @@ These are the problems that have a visualization
 | --- | --- | --- | --- |
 |0|    | ✅ | ✅ |  
 |1| ✅ | ✅ | ✅ | 
-|2| ✅ | ✅ | ❌ | 
+|2| ✅ | ✅ | ✅ | 
 |3| ✅ | ✅ | ❌ | 
 |4| ✅ | ✅ | ✅ | 
 |5| ✅ | ✅ | ✅ | 
