@@ -124,7 +124,9 @@ fn build_visualization(parent: &mut ChildBuilder, input: &mut Input) {
                                 height: Val::Percent(100.),
                                 flex_direction: FlexDirection::Column,
                                 flex_wrap: bevy::ui::FlexWrap::NoWrap,
-                                aspect_ratio: Some(maze.width() as f32 / maze.height() as f32),
+                                aspect_ratio: Some(
+                                    (maze.width() - 1) as f32 / maze.height() as f32,
+                                ),
                                 border: UiRect::all(Val::Px(3.)),
                                 ..Default::default()
                             },
@@ -140,7 +142,7 @@ fn build_visualization(parent: &mut ChildBuilder, input: &mut Input) {
                                         ..Default::default()
                                     })
                                     .with_children(|parent| {
-                                        for x in 0..maze.width() {
+                                        for x in 0..(maze.width() - 1) {
                                             let background = if maze_tiles[Coord::new(y, x)]
                                                 == usize::MAX
                                             {
